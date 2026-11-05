@@ -1,0 +1,21 @@
+[[asset]]
+path = "assets/easyPDF-icona.png"
+title = "easyPDF application icon (PNG)"
+author = "Twinba Srl"
+source = "Brand assets supplied by Twinba Srl, 2026-10-18"
+licence = "LicenseRef-Twinba-Trademark"
+licence_file = "assets/LICENSE-easyPDF-brand.txt"
+kind = "logo"
+usage = "Desktop application icon and branded product artwork"
+sha256 = "b807ef095ae70f289a71f975dd463dc33df4d12e316d8e82af82681baa50391f"
+
+[[asset]]
+path = "assets/easyPDF-logo-h.svg"
+title = "easyPDF horizontal wordmark"
+author = "Twinba Srl"
+source = "Brand assets supplied by Twinba Srl, 2026-10-18"
+licence = "LicenseRef-Twinba-Trademark"
+licence_file = "assets/LICENSE-easyPDF-brand.txt"
+kind = "logo"
+usage = "Horizontal easyPDF branding in the application and documentation"
+sha256 = "40f3e9e5c6bbd3693437ae2ba78275680c7c11003c2c584e81a52605070c2172"

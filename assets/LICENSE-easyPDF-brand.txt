@@ -1,0 +1,9 @@
+easyPDF Brand Assets
+
+Copyright (c) 2026 Twinba Srl. All rights reserved.
+
+The easyPDF name, wordmarks, logos and icons identified in ATTRIBUTION.toml as
+LicenseRef-Twinba-Trademark are proprietary brand assets of Twinba Srl. They are
+not licensed under the software licences that cover the source code and third-party
+components. No permission is granted to use them outside authorized easyPDF builds
+or to imply endorsement by Twinba Srl.
