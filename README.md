@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://easypdf.asteritilfa.it/"><img src="assets/easyPDF-icona.png" alt="Icona easyPDF" width="96" height="96"></a><br>
-  <img src="assets/easyPDF-logo-h.svg" alt="easyPDF" width="360">
+  <a href="https://easypdf.asteritilfa.it/">
+  <img src="assets/easyPDF-logo-h.svg" alt="easyPDF" width="360"></a>
 </p>
 
 # easyPDF 2.0
