@@ -1,7 +1,8 @@
 //! `cargo xtask netcheck`: which network-capable crates the batch path can reach.
 //!
-//! The batch folder job runs `pdfcraft-cli`, which drives `pdfcraft-automation` over
-//! `pdfcraft-engine`; none of them may open a socket. That promise is only as strong as the
+//! The batch folder job runs `easypdf-cli`, which drives `easypdf-automation` over
+//! `easypdf-engine`. Connected account and AI tools can use the network explicitly; this gate
+//! records the reviewed dependency paths so unexpected new ones are visible. That review is only as strong as the
 //! dependency graph behind those three packages, so this gate walks the resolved graph recorded
 //! in `Cargo.lock` and asks, for each of them and each crate that can open a socket, whether that
 //! crate is reachable from it. The answer is compared with a reviewed baseline in
@@ -28,7 +29,7 @@ use serde::{Deserialize, Serialize};
 use crate::gates::root;
 
 /// The packages the batch path is built from.
-const PACKAGES: &[&str] = &["pdfcraft-cli", "pdfcraft-automation", "pdfcraft-engine"];
+const PACKAGES: &[&str] = &["easypdf-cli", "easypdf-automation", "easypdf-engine"];
 
 /// Crates that can open a socket: HTTP clients, TLS stacks, async runtimes, socket wrappers and
 /// libcurl bindings.

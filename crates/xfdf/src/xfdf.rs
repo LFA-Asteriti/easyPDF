@@ -50,9 +50,11 @@ fn annots_with_replies(doc: &Document, which: &[(usize, usize)]) -> HashSet<(usi
 
 /// Every comment as an XFDF element (one line per comment, replies included), or only those at
 /// the positions in `only`.
-/// The namespace of PdfCraft's own attributes in XFDF (`pdfcraft:keys`): other readers skip them.
-pub(crate) const EASYPDF_NS: &str = "https://github.com/storytold/pdfcraft#xfdf";
-/// At most this much text in a `pdfcraft:keys` attribute is read.
+/// Namespace of easyPDF's own attributes in exported XFDF.
+pub(crate) const EASYPDF_NS: &str = "https://github.com/LFA-Asteriti/easyPDF#xfdf";
+/// Old XFDF remains readable so existing comment copies can be imported.
+pub(crate) const LEGACY_PDFCRAFT_NS: &str = "https://github.com/storytold/pdfcraft#xfdf";
+/// At most this much text in an `easypdf:keys` attribute is read.
 const MAX_OWN_KEYS: usize = 64 * 1024;
 
 /// A value that means the same in another document: no reference or stream into this one.
@@ -87,10 +89,14 @@ fn own_keys(d: &Dict) -> Option<String> {
     String::from_utf8(out).ok()
 }
 
-/// The `pdfcraft:keys` of an XFDF comment back as dictionary entries: PdfCraft's keys only, with
+/// The private keys of an XFDF comment back as dictionary entries: compatible `/PC` keys only, with
 /// values that mean the same here. Anything malformed is skipped.
 fn read_own_keys(node: roxmltree::Node, d: &mut Dict) {
-    let Some(text) = node.attribute((EASYPDF_NS, "keys")).filter(|t| t.len() <= MAX_OWN_KEYS) else { return };
+    let Some(text) =
+        node.attribute((EASYPDF_NS, "keys")).or_else(|| node.attribute((LEGACY_PDFCRAFT_NS, "keys"))).filter(|t| t.len() <= MAX_OWN_KEYS)
+    else {
+        return;
+    };
     let Ok(Object::Dict(keys)) = easypdf_cos::Lexer::new(text.as_bytes(), 0).object() else { return };
     for (k, v) in keys.iter().filter(|(k, v)| k.starts_with(b"PC") && portable(v, 0)) {
         if !d.contains(k) {
@@ -125,7 +131,7 @@ fn annotation_names(doc: &Document, pages: &[easypdf_model::Page], only: Option<
         }
     }
     for (pi, ai, r) in unnamed {
-        let mut name = format!("pdfcraft-{pi}-{ai}");
+        let mut name = format!("easypdf-{pi}-{ai}");
         while taken.contains(&name) {
             name.push('x');
         }
@@ -177,7 +183,7 @@ fn xfdf_annot_children(doc: &Document, out: &mut String, d: &Dict, pi: usize) {
     }
 }
 
-/// `own`: write each comment's PdfCraft keys too (see [`own_keys`]), for a copy and paste.
+/// `own`: write each comment's private compatible keys too (see [`own_keys`]), for a copy and paste.
 fn xfdf_annots(doc: &Document, out: &mut String, only: Option<&HashSet<(usize, usize)>>, own: bool) {
     let pages = easypdf_model::pages(doc);
     // NM of every annotation, for inreplyto. A selected annotation without one (other tools
@@ -279,7 +285,7 @@ fn xfdf_annots(doc: &Document, out: &mut String, only: Option<&HashSet<(usize, u
                 let _ = write!(attrs, " inreplyto=\"{}\"", esc(irt));
             }
             if own && let Some(keys) = own_keys(&d) {
-                let _ = write!(attrs, " pdfcraft:keys=\"{}\"", esc(&keys));
+                let _ = write!(attrs, " easypdf:keys=\"{}\"", esc(&keys));
             }
             let _ = write!(out, "<{tag}{attrs}>");
             xfdf_annot_children(doc, out, &d, pi);
@@ -342,7 +348,7 @@ fn xfdf_fields(doc: &Document, out: &mut String) {
 pub fn export_xfdf_comments(doc: &Document, which: &[(usize, usize)], file: &str) -> String {
     let only = annots_with_replies(doc, which);
     let mut out = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xfdf xmlns=\"http://ns.adobe.com/xfdf/\" xmlns:pdfcraft=\"{EASYPDF_NS}\" xml:space=\"preserve\">\n"
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xfdf xmlns=\"http://ns.adobe.com/xfdf/\" xmlns:easypdf=\"{EASYPDF_NS}\" xml:space=\"preserve\">\n"
     );
     out.push_str("<annots>\n");
     xfdf_annots(doc, &mut out, Some(&only), true);

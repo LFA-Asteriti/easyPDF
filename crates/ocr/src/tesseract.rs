@@ -27,7 +27,7 @@ const MAX_STDERR: u64 = 256 * 1024;
 /// is truncated at the cap — corrupt or runaway output must not become unbounded memory in
 /// the word list, the text layer and the review UI.
 pub const MAX_WORDS: usize = 50_000;
-/// Tesseract's code for each language PdfCraft offers (ISO 639-1 → tessdata name). Only these
+/// Tesseract's code for each language easyPDF offers (ISO 639-1 → tessdata name). Only these
 /// codes ever reach the process, whatever the settings say.
 pub const LANGUAGE_CODES: &[(&str, &str)] = &[
     ("en", "eng"),
@@ -533,7 +533,7 @@ impl TempDir {
         // that one collision is retried with the next counter value, anything else is fatal.
         for _ in 0..4 {
             let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let path = std::env::temp_dir().join(format!("pdfcraft-ocr-{}-{nanos}-{seq}", std::process::id()));
+            let path = std::env::temp_dir().join(format!("easypdf-ocr-{}-{nanos}-{seq}", std::process::id()));
             match builder.create(&path) {
                 Ok(()) => return Ok(TempDir { path }),
                 Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,

@@ -333,7 +333,7 @@ fn tesseract_engine_now(configured: Option<&str>) -> Probe {
     };
     if !PROBING.swap(true, std::sync::atomic::Ordering::AcqRel) {
         let configured = configured.map(str::to_string);
-        let started = std::thread::Builder::new().name("pdfcraft-tesseract-probe".into()).spawn(move || {
+        let started = std::thread::Builder::new().name("easypdf-tesseract-probe".into()).spawn(move || {
             let _ = tesseract_engine(configured.as_deref());
             PROBING.store(false, std::sync::atomic::Ordering::Release);
         });

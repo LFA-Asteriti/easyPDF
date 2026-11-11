@@ -32,7 +32,7 @@ impl Automation {
         }
 
         let base = std::env::var("EASYPDF_WEB_URL")
-            .map_err(|_| ToolError::Failed("set EASYPDF_WEB_URL to the easyPDF Web installation (for example http://localhost:8282)".into()))?;
+            .map_err(|_| ToolError::Failed("set EASYPDF_WEB_URL to your easyPDF Web installation (HTTPS, or localhost for tests)".into()))?;
         let parsed = url::Url::parse(&base).map_err(|_| ToolError::Failed("EASYPDF_WEB_URL is not a valid URL".into()))?;
         let local_http = parsed.scheme() == "http" && matches!(parsed.host_str(), Some("localhost" | "127.0.0.1"));
         if !((parsed.scheme() == "https" && parsed.host_str().is_some()) || local_http)

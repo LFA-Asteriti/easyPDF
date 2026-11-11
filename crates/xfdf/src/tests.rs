@@ -4,7 +4,7 @@ use easypdf_annot::{Markup, Meta, NewAnnotation, Shape, Style, TextReplacement, 
 use easypdf_cos::{SaveOptions, write_full, write_incremental};
 use easypdf_forms::{NewField, add_field, fields, set_value};
 
-use super::xfdf::EASYPDF_NS;
+use super::xfdf::{EASYPDF_NS, LEGACY_PDFCRAFT_NS};
 use super::*;
 
 /// Two blank pages with three fields (text, check box, list).
@@ -2215,7 +2215,7 @@ fn replies_to_a_selected_comment_without_a_name_follow_it_into_the_copy() {
     direct.set(b"Type".to_vec(), Object::name("Annot"));
     direct.set(b"Subtype".to_vec(), Object::name("Square"));
     direct.set(b"Rect".to_vec(), arr(&[100.0, 100.0, 150.0, 140.0]));
-    direct.set(b"NM".to_vec(), PdfString::text(&format!("pdfcraft-0-{index}")));
+    direct.set(b"NM".to_vec(), PdfString::text(&format!("easypdf-0-{index}")));
     let page = easypdf_model::pages(&doc)[0].obj;
     doc.update_dict(page, |p| {
         if let Some(Object::Array(annots)) = p.get_mut(b"Annots") {
@@ -2224,7 +2224,7 @@ fn replies_to_a_selected_comment_without_a_name_follow_it_into_the_copy() {
     })
     .unwrap();
     let xfdf = export_xfdf_comments(&doc, &[(0, index)], "x.pdf");
-    let given = format!("pdfcraft-0-{index}x");
+    let given = format!("easypdf-0-{index}x");
     assert!(xfdf.contains(&format!("name=\"{given}\"")) && xfdf.contains(&format!("inreplyto=\"{given}\"")), "{xfdf}");
     let mut dst = blank();
     import_comments(&mut dst, &xfdf, Some(0), Some("p"), None).unwrap();
@@ -2385,6 +2385,10 @@ fn copies_keep_their_intent_cloud_and_easypdf_keys() {
     .unwrap();
     let which: Vec<(usize, usize)> = summaries(&src).iter().map(|c| (c.page, c.index)).collect();
     let xfdf = export_xfdf_comments(&src, &which, "src.pdf");
+    assert!(
+        xfdf.contains(&format!("xmlns:easypdf=\"{EASYPDF_NS}\"")) && xfdf.contains("easypdf:keys=") && !xfdf.contains("xmlns:pdfcraft"),
+        "{xfdf}"
+    );
     assert!(xfdf.contains("intent=\"FreeTextTypeWriter\"") && xfdf.contains("style=\"cloudy\""), "{xfdf}");
     let mut dst = blank();
     import_comments(&mut dst, &xfdf, Some(1), Some("p"), Some([5.0, -5.0])).unwrap();
@@ -2408,7 +2412,7 @@ fn copies_keep_their_intent_cloud_and_easypdf_keys() {
     assert!(exported.contains("intent=\"FreeTextTypeWriter\"") && !exported.contains("pdfcraft:keys"), "{exported}");
     // A hand-made attribute: only PdfCraft keys with values of their own are taken.
     let crafted = format!(
-        "<xfdf xmlns=\"http://ns.adobe.com/xfdf/\" xmlns:pdfcraft=\"{EASYPDF_NS}\"><annots>\
+        "<xfdf xmlns=\"http://ns.adobe.com/xfdf/\" xmlns:pdfcraft=\"{LEGACY_PDFCRAFT_NS}\"><annots>\
          <square page=\"0\" rect=\"10,10,50,50\" pdfcraft:keys=\"&lt;&lt; /PCAngle 45 /Subtype /Ink /PCRef 3 0 R &gt;&gt;\"/>\
          <square page=\"0\" rect=\"60,10,90,50\" pdfcraft:keys=\"&lt;&lt; /PCAngle\"/></annots></xfdf>"
     );
