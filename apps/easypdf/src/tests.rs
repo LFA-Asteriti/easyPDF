@@ -682,7 +682,7 @@ fn the_flatpak_manifests_pin_the_craft_i18n_rev() {
             .find_map(|l| l.trim().strip_prefix("commit:"))
             .unwrap_or_else(|| panic!("{manifest}: the craft-i18n source pins a commit"));
         assert_eq!(commit.trim().trim_matches(['\'', '"']), rev, "{manifest}");
-        assert!(text.contains("CRAFT_I18N_DIR: /run/build/pdfcraft/craft-i18n"), "{manifest}: the build names the catalogs");
+        assert!(text.contains("CRAFT_I18N_DIR: /run/build/easypdf/craft-i18n"), "{manifest}: the build names the catalogs");
     }
 }
 

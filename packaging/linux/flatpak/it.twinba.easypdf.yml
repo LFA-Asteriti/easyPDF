@@ -45,6 +45,8 @@ modules:
       env:
         CARGO_HOME: /run/build/easypdf/cargo
         CARGO_NET_OFFLINE: 'true'
+        CRAFT_I18N_DIR: /run/build/easypdf/craft-i18n
+        CRAFT_I18N_REQUIRED: '1'
     build-commands:
       - cargo --offline build --release --locked -p easypdf
       - install -Dm755 target/release/easypdf /app/bin/easypdf
@@ -65,4 +67,9 @@ modules:
           - corpus
           - build-flatpak
           - .flatpak-builder
+      # Match the reviewed translation revision in craft-i18n.rev.
+      - type: git
+        url: https://github.com/storytold/craft-i18n
+        commit: 575cfdef63227b14daf173b8cc87928bfdfa325e
+        dest: craft-i18n
       - cargo-sources.json
