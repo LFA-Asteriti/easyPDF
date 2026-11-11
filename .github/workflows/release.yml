@@ -222,7 +222,7 @@ jobs:
           test -n "$version"
           printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
           (cd dist/release && sha256sum ./* > SHA256SUMS.txt)
-          printf '%s\n' "easyPDF v$version — pacchetti desktop non firmati." "Windows può mostrare SmartScreen; macOS può richiedere l'apertura manuale in Impostazioni di sistema." "La versione web richiede il portale autenticato e viene distribuita separatamente." > dist/release/RELEASE-NOTES.txt
+          printf '%s\n' "easyPDF v$version beta — pacchetti desktop non firmati." "Windows può mostrare SmartScreen; macOS può richiedere l'apertura manuale in Impostazioni di sistema." "La versione web richiede il portale autenticato e viene distribuita separatamente." > dist/release/RELEASE-NOTES.txt
       - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -234,4 +234,4 @@ jobs:
             echo "Release $tag already exists; review it instead of overwriting its assets" >&2
             exit 1
           fi
-          gh release create "$tag" dist/release/* --draft --title "easyPDF $tag" --notes-file dist/release/RELEASE-NOTES.txt --target "$GITHUB_SHA"
+          gh release create "$tag" dist/release/* --draft --prerelease --title "easyPDF $tag" --notes-file dist/release/RELEASE-NOTES.txt --target "$GITHUB_SHA"

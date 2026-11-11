@@ -76,3 +76,9 @@ allow = ["OFL-1.1", "Ubuntu-font-1.0"]
 [[licenses.exceptions]]
 crate = "webpki-root-certs"
 allow = ["CDLA-Permissive-2.0"]
+
+# ureq uses the Mozilla CA root bundle as data when connecting to HTTPS services.
+# Review this exception separately from webpki-root-certs because it is used at runtime.
+[[licenses.exceptions]]
+crate = "webpki-roots"
+allow = ["CDLA-Permissive-2.0"]

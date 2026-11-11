@@ -5,7 +5,7 @@ exclude = ["vendor"]
 default-members = ["crates/*", "apps/easypdf", "apps/easypdf-cli", "xtask"]
 
 [workspace.package]
-version = "0.19.0"
+version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 rust-version = "1.95"
@@ -30,41 +30,41 @@ craft-docpath = { version = "0.1.0", git = "https://github.com/storytold/craft-l
 # craft-update: app-specific pretend versions apply to startup and manual checks.
 craft-update = { git = "https://github.com/storytold/craft-libs", version = "=0.1.0", rev = "787a7a0f972fd1d7a7618fdbeca3a5267a0407ff", features = ["egui"] }
 # internal
-easypdf-geom = { path = "crates/geom", version = "0.19.0" }
-easypdf-filters = { path = "crates/filters", version = "0.19.0" }
-easypdf-cos = { path = "crates/cos", version = "0.19.0" }
-easypdf-crypt = { path = "crates/crypt", version = "0.19.0" }
-easypdf-organize = { path = "crates/organize", version = "0.19.0" }
-easypdf-measure = { path = "crates/measure", version = "0.19.0" }
-easypdf-annot = { path = "crates/annot", version = "0.19.0" }
-easypdf-audit = { path = "crates/audit", version = "0.19.0" }
-easypdf-fonts = { path = "crates/fonts", version = "0.19.0" }
-easypdf-model = { path = "crates/model", version = "0.19.0" }
-easypdf-content = { path = "crates/content", version = "0.19.0" }
-easypdf-redact = { path = "crates/redact", version = "0.19.0" }
-easypdf-print = { path = "crates/print", version = "0.19.0" }
-easypdf-xfdf = { path = "crates/xfdf", version = "0.19.0" }
-easypdf-sign = { path = "crates/sign", version = "0.19.0" }
-easypdf-optimize = { path = "crates/optimize", version = "0.19.0" }
-easypdf-a11y = { path = "crates/a11y", version = "0.19.0" }
-easypdf-oracle = { path = "crates/oracle", version = "0.19.0" }
-easypdf-testkit = { path = "crates/testkit", version = "0.19.0" }
-easypdf-ocr = { path = "crates/ocr", version = "0.19.0" }
-easypdf-js = { path = "crates/js", version = "0.19.0" }
-easypdf-compare = { path = "crates/compare", version = "0.19.0" }
-easypdf-preflight = { path = "crates/preflight", version = "0.19.0" }
-easypdf-export = { path = "crates/export", version = "0.19.0" }
-easypdf-edit = { path = "crates/edit", version = "0.19.0" }
-easypdf-create = { path = "crates/create", version = "0.19.0" }
-easypdf-forms = { path = "crates/forms", version = "0.19.0" }
-easypdf-xfa = { path = "crates/xfa", version = "0.19.0" }
-easypdf-render = { path = "crates/render", version = "0.19.0" }
-easypdf-engine = { path = "crates/engine", version = "0.19.0" }
-easypdf-platform = { path = "crates/platform", version = "0.19.0" }
-easypdf-ui-egui = { path = "crates/ui-egui", version = "0.19.0" }
-easypdf-automation = { path = "crates/automation", version = "0.19.0", default-features = false }
-easypdf-prc = { path = "crates/prc", version = "0.19.0" }
-easypdf-prc-render = { path = "crates/prc-render", version = "0.19.0" }
+easypdf-geom = { path = "crates/geom", version = "0.1.0" }
+easypdf-filters = { path = "crates/filters", version = "0.1.0" }
+easypdf-cos = { path = "crates/cos", version = "0.1.0" }
+easypdf-crypt = { path = "crates/crypt", version = "0.1.0" }
+easypdf-organize = { path = "crates/organize", version = "0.1.0" }
+easypdf-measure = { path = "crates/measure", version = "0.1.0" }
+easypdf-annot = { path = "crates/annot", version = "0.1.0" }
+easypdf-audit = { path = "crates/audit", version = "0.1.0" }
+easypdf-fonts = { path = "crates/fonts", version = "0.1.0" }
+easypdf-model = { path = "crates/model", version = "0.1.0" }
+easypdf-content = { path = "crates/content", version = "0.1.0" }
+easypdf-redact = { path = "crates/redact", version = "0.1.0" }
+easypdf-print = { path = "crates/print", version = "0.1.0" }
+easypdf-xfdf = { path = "crates/xfdf", version = "0.1.0" }
+easypdf-sign = { path = "crates/sign", version = "0.1.0" }
+easypdf-optimize = { path = "crates/optimize", version = "0.1.0" }
+easypdf-a11y = { path = "crates/a11y", version = "0.1.0" }
+easypdf-oracle = { path = "crates/oracle", version = "0.1.0" }
+easypdf-testkit = { path = "crates/testkit", version = "0.1.0" }
+easypdf-ocr = { path = "crates/ocr", version = "0.1.0" }
+easypdf-js = { path = "crates/js", version = "0.1.0" }
+easypdf-compare = { path = "crates/compare", version = "0.1.0" }
+easypdf-preflight = { path = "crates/preflight", version = "0.1.0" }
+easypdf-export = { path = "crates/export", version = "0.1.0" }
+easypdf-edit = { path = "crates/edit", version = "0.1.0" }
+easypdf-create = { path = "crates/create", version = "0.1.0" }
+easypdf-forms = { path = "crates/forms", version = "0.1.0" }
+easypdf-xfa = { path = "crates/xfa", version = "0.1.0" }
+easypdf-render = { path = "crates/render", version = "0.1.0" }
+easypdf-engine = { path = "crates/engine", version = "0.1.0" }
+easypdf-platform = { path = "crates/platform", version = "0.1.0" }
+easypdf-ui-egui = { path = "crates/ui-egui", version = "0.1.0" }
+easypdf-automation = { path = "crates/automation", version = "0.1.0", default-features = false }
+easypdf-prc = { path = "crates/prc", version = "0.1.0" }
+easypdf-prc-render = { path = "crates/prc-render", version = "0.1.0" }
 
 # pdf
 hayro = "0.7.1"
