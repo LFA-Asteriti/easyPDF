@@ -237,6 +237,9 @@ pub const COMMANDS: &[CommandSpec] = &[
     c("comment.copy", "Copy comments", EDIT, None, Document, "copy"),
     c("comment.paste", "Paste comments", EDIT, None, Annotate, "clipboard-paste"),
     c("edit.column_select", "Column select", EDIT, None, Document, "text-select"),
+    c("ai.summary", "Summarize", None, None, Copying, "sparkles"),
+    c("ai.ask", "Ask about this document", None, None, Copying, "message-circle-reply"),
+    c("ai.translate", "Translate", None, None, Copying, "languages"),
     c("edit.snapshot", "Take a snapshot", EDIT, None, Copying, "camera"),
     c("view.full_screen", "Full screen mode", VIEW, Some(Shortcut::cmd("L")), Document, "maximize"),
     c(
