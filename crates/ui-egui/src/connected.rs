@@ -821,7 +821,7 @@ fn management_modals(ctx: &egui::Context, app: &mut EasyPdfApp, t: &crate::theme
             ui.add(crate::widgets::line(&mut editor.email).hint_text(tl!("Email")).desired_width(f32::INFINITY));
             ui.add_enabled_ui(!is_self, |ui| {
                 ui.horizontal(|ui| {
-                    egui::ComboBox::from_id_salt("edit-user-role").selected_text(account_role_label(&editor.role)).show_ui(ui, |ui| {
+                    craft_ui::ComboBox::from_id_salt("edit-user-role").selected_text(account_role_label(&editor.role)).show_ui(ui, |ui| {
                         ui.selectable_value(&mut editor.role, "user".into(), tl!("User"));
                         ui.selectable_value(&mut editor.role, "admin".into(), tl!("Administrator"));
                         if snapshot.account.role == "super_admin" {
@@ -829,7 +829,7 @@ fn management_modals(ctx: &egui::Context, app: &mut EasyPdfApp, t: &crate::theme
                         }
                     });
                     if snapshot.account.role == "super_admin" && editor.role != "super_admin" {
-                        egui::ComboBox::from_id_salt("edit-user-organization")
+                        craft_ui::ComboBox::from_id_salt("edit-user-organization")
                             .selected_text(
                                 snapshot
                                     .organizations
@@ -846,7 +846,7 @@ fn management_modals(ctx: &egui::Context, app: &mut EasyPdfApp, t: &crate::theme
                                 }
                             });
                     }
-                    egui::ComboBox::from_id_salt("edit-user-approval")
+                    craft_ui::ComboBox::from_id_salt("edit-user-approval")
                         .selected_text(approval_label(&editor.approval_status, editor.approval_status == "approved"))
                         .show_ui(ui, |ui| {
                             for (value, label) in [
@@ -1129,7 +1129,7 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                     });
                     ui.horizontal(|ui| {
                         if account.role == "super_admin" || account.role == "admin" {
-                            egui::ComboBox::from_id_salt("new-user-role")
+                            craft_ui::ComboBox::from_id_salt("new-user-role")
                                 .selected_text(tl!(account_role_label(&app.connected.new_user_role)))
                                 .show_ui(ui, |ui| {
                                     ui.selectable_value(&mut app.connected.new_user_role, "user".into(), tl!("User"));
@@ -1142,7 +1142,7 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                             ui.label(tl!("User"));
                         }
                         if account.role == "super_admin" && app.connected.new_user_role != "super_admin" {
-                            egui::ComboBox::from_id_salt("new-user-org")
+                            craft_ui::ComboBox::from_id_salt("new-user-org")
                                 .selected_text(
                                     snapshot
                                         .organizations
@@ -1409,7 +1409,7 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
             ui.label(tl!("AI configuration to use"));
             if shared.is_some() {
                 let previous_source = app.connected.ai_source.clone();
-                egui::ComboBox::from_id_salt("ai-source")
+                craft_ui::ComboBox::from_id_salt("ai-source")
                     .selected_text(if app.connected.ai_source == "organization" { tl!("Organization AI") } else { tl!("Personal AI") })
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut app.connected.ai_source, "personal".into(), tl!("Personal AI"));
@@ -1453,7 +1453,7 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                 section(ui, tl!("Personal AI"));
                 ui.label(tl!("AI provider"));
                 let previous_provider = app.connected.ai_provider.clone();
-                egui::ComboBox::from_id_salt("ai-provider").selected_text(&app.connected.ai_provider).show_ui(ui, |ui| {
+                craft_ui::ComboBox::from_id_salt("ai-provider").selected_text(&app.connected.ai_provider).show_ui(ui, |ui| {
                     for (id, label) in
                         [("openai", "OpenAI / ChatGPT"), ("gemini", "Gemini"), ("openrouter", "OpenRouter"), ("compatible", "OpenAI-compatible")]
                     {
@@ -1466,7 +1466,7 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                     app.connected.ai_secret.clear();
                 }
                 if app.connected.ai_provider == "openai" {
-                    egui::ComboBox::from_id_salt("ai-auth").selected_text(&app.connected.ai_auth_mode).show_ui(ui, |ui| {
+                    craft_ui::ComboBox::from_id_salt("ai-auth").selected_text(&app.connected.ai_auth_mode).show_ui(ui, |ui| {
                         ui.selectable_value(&mut app.connected.ai_auth_mode, "api_key".into(), tl!("API key"));
                         ui.selectable_value(&mut app.connected.ai_auth_mode, "chatgpt_oauth".into(), "ChatGPT OAuth");
                     });
@@ -1502,7 +1502,7 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                         !app.connected.ai_secret.is_empty() || saved_credential || app.connected.ai_provider == "compatible"
                     };
                 ui.horizontal(|ui| {
-                    egui::ComboBox::from_id_salt("ai-model")
+                    craft_ui::ComboBox::from_id_salt("ai-model")
                         .selected_text(if app.connected.ai_model.is_empty() { tl!("Choose model") } else { &app.connected.ai_model })
                         .show_ui(ui, |ui| {
                             for model in &app.connected.ai_models {
