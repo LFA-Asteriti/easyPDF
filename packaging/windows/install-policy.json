@@ -1,0 +1,329 @@
+{
+  "id": "easypdf",
+  "name": "easyPDF",
+  "upgradeCode": "B8626BC0-B37E-4D1A-A09A-CE102257685F",
+  "sources": [
+    "easypdf.wxs",
+    "installer-ui.wxs"
+  ],
+  "icon": "assets/app-icon/easypdf.ico",
+  "localization": [],
+  "extensions": [],
+  "payloads": [
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+    "LICENSE-easyPDF-brand.txt",
+    "NOTICE",
+    "easypdf-cli.exe",
+    "easypdf.exe"
+  ],
+  "registry": [
+    [
+      "-1",
+      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\easypdf.exe",
+      "",
+      "[#easyPDFExe]"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Twinba.easyPDF.Document",
+      "",
+      "PDF Document"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Twinba.easyPDF.Document\\DefaultIcon",
+      "",
+      "\"[#easyPDFExe]\",-2"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Twinba.easyPDF.Document\\shell\\open\\command",
+      "",
+      "\"[#easyPDFExe]\" \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Twinba.easyPDF.Document",
+      "TypeOverlay",
+      ""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\.pdf\\OpenWithProgids",
+      "Twinba.easyPDF.Document",
+      ""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Applications\\easypdf.exe",
+      "FriendlyAppName",
+      "easyPDF"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Applications\\easypdf.exe\\DefaultIcon",
+      "",
+      "\"[#easyPDFExe]\",-2"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Applications\\easypdf.exe\\SupportedTypes",
+      ".pdf",
+      ""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\Applications\\easypdf.exe\\shell\\open\\command",
+      "",
+      "\"[#easyPDFExe]\" \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Twinba\\easyPDF\\Capabilities",
+      "ApplicationName",
+      "easyPDF"
+    ],
+    [
+      "-1",
+      "Software\\Twinba\\easyPDF\\Capabilities",
+      "ApplicationDescription",
+      "Open-source PDF workbench"
+    ],
+    [
+      "-1",
+      "Software\\Twinba\\easyPDF\\Capabilities",
+      "ApplicationIcon",
+      "[#easyPDFExe],0"
+    ],
+    [
+      "-1",
+      "Software\\Twinba\\easyPDF\\Capabilities\\FileAssociations",
+      ".pdf",
+      "Twinba.easyPDF.Document"
+    ],
+    [
+      "-1",
+      "Software\\RegisteredApplications",
+      "easyPDF",
+      "Software\\Twinba\\easyPDF\\Capabilities"
+    ],
+    [
+      "-1",
+      "Software\\Twinba\\easyPDF\\Shortcuts",
+      "StartMenu",
+      "#1"
+    ],
+    [
+      "-1",
+      "Software\\Twinba\\easyPDF\\Shortcuts",
+      "Desktop",
+      "#1"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\easyPDF.Edit",
+      "",
+      "Edit with easyPDF"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\easyPDF.Edit",
+      "Icon",
+      "\"[#easyPDFExe]\",0"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\easyPDF.Edit",
+      "MultiSelectModel",
+      "Document"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\easyPDF.Edit\\command",
+      "",
+      "\"[#easyPDFExe]\" \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\easyPDF.CreatePdf",
+      "",
+      "Create PDF with easyPDF\u2026"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\easyPDF.CreatePdf",
+      "MultiSelectModel",
+      "Single"
+    ],
+    [
+      "-1",
+      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\easyPDF.CreatePdf\\command",
+      "",
+      "\"[#easyPDFExe]\" --create-images \"%1\""
+    ]
+  ],
+  "mode": "dualScope"
+}

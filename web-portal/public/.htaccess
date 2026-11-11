@@ -1,0 +1,6 @@
+RewriteEngine On
+
+# PHP must receive desktop Bearer tokens even when Apache does not expose the
+# Authorization request header as HTTP_AUTHORIZATION by default.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

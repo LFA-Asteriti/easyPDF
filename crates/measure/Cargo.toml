@@ -1,0 +1,20 @@
+[package]
+name = "easypdf-measure"
+description = "Calibrated 2D PDF measurements, viewports and snapping"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+easypdf-cos = { workspace = true }
+easypdf-model = { workspace = true }
+easypdf-content = { workspace = true }
+easypdf-annot = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+easypdf-testkit = { workspace = true }

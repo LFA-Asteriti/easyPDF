@@ -1,0 +1,16 @@
+name: SonarCloud (disabled until easyPDF-owned integration is approved)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review-required:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain why analysis is disabled
+        run: |
+          echo '::error title=easyPDF SonarCloud not configured::Review and pin an easyPDF-owned analysis workflow without credential forwarding.'
+          exit 1
