@@ -16,17 +16,18 @@ sha256 = "cd7032ea33b71427f188e34ffb4aee9d6868a57fd196037c5c8b2be03a2a0352"
 [[document]]
 source = "NOTICE"
 destination = "NOTICE"
-sha256 = "9f854f730719af962cd840529324d089e05e68a30bd245c50e33f96e009b4314"
+sha256 = "c1962ce267ea050f2c785f38ae09d18e17f86163c06b638bf318c6ad6a7014e9"
 
 [[document]]
-source = "assets/app-icon/LICENSE-document.txt"
-destination = "assets/app-icon/LICENSE-document.txt"
-sha256 = "64a3137e3d5cc41e5b78d2ad8dd9ddddd6588283f9f7b3128aa6a8a50852fb9a"
+source = "assets/LICENSE-easyPDF-brand.txt"
+destination = "assets/LICENSE-easyPDF-brand.txt"
+sha256 = "62bf8b1241cbc05dfe415e2a25535efe2194c7f2f26d7fefb496e3ae4074d42a"
 
 [[document]]
-source = "assets/app-icon/LICENSE.txt"
-destination = "assets/app-icon/LICENSE.txt"
-sha256 = "b768acafe6cbad8247eedf86b5b5381feefcd4ee0f8c7808b86811bc687cf37b"
+source = "assets/app-icon/LICENSE-Devicon-MIT.txt"
+licences = ["MIT"]
+destination = "assets/app-icon/LICENSE-Devicon-MIT.txt"
+sha256 = "121194741d4a915b9f5890fdd6dd95121f9b1f816517c792358d72d7c838d664"
 
 [[document]]
 source = "assets/fonts/OFL-DancingScript.txt"
