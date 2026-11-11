@@ -17,12 +17,13 @@ easypdf-platform = { workspace = true }
 easypdf-prc = { workspace = true }
 easypdf-prc-render = { workspace = true }
 serde_json = { workspace = true }
-ureq = "3.4"
-url = "2.5"
 sha2 = "0.11"
 tempfile = "3.27"
 base64 = "0.23"
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ureq = "3.4"
+url = "2.5"
 
 [features]
 default = ["mcp"]

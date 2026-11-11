@@ -15,6 +15,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 mod a11y;
+#[cfg(not(target_arch = "wasm32"))]
 mod ai;
 mod batch;
 mod bates;
@@ -30,7 +31,10 @@ pub mod mcp;
 mod measure;
 mod model3d;
 mod model_render;
+#[cfg(not(target_arch = "wasm32"))]
 mod portal;
+#[cfg(target_arch = "wasm32")]
+mod portal_wasm;
 mod printing;
 mod reading;
 mod redact;
