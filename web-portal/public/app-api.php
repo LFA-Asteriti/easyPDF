@@ -813,6 +813,9 @@ try {
             $covers = $pdo->prepare('SELECT front_storage_name, back_storage_name FROM cover_sets WHERE organization_id = ?');
             $covers->execute([$id]);
             $coverSets = $covers->fetchAll();
+            $documents = $pdo->prepare('SELECT storage_name FROM shared_documents WHERE organization_id = ?');
+            $documents->execute([$id]);
+            $documentNames = $documents->fetchAll(PDO::FETCH_COLUMN);
             if ($deleteUsers) {
                 $pdo->prepare('DELETE FROM users WHERE organization_id = ?')->execute([$id]);
             } else {
@@ -826,6 +829,7 @@ try {
             throw $error;
         }
         api_remove_cover_files('organizations/' . $id, $coverSets);
+        remove_organization_document_files($id, $documentNames);
         api_json(['message' => $deleteUsers ? 'Organizzazione e utenti eliminati.' : 'Organizzazione eliminata; gli utenti sono ora account personali.', 'snapshot' => api_snapshot($user)]);
     }
     if ($action === 'organization-toggle') {

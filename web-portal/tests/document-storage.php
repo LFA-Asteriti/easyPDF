@@ -36,6 +36,12 @@ try {
     }
     test_assert($rejected, 'Un nome di storage non sicuro deve essere rifiutato.');
 
+    $otherStorageName = '01234567-89ab-4cde-af01-23456789abce';
+    $otherPath = store_shared_document_bytes($organizationId + 1, $otherStorageName, $bytes);
+    remove_organization_document_files($organizationId, [$storageName]);
+    test_assert(!is_file($path), 'La rimozione dell’organizzazione deve cancellare il PDF condiviso.');
+    test_assert(is_file($otherPath), 'I documenti di altre organizzazioni devono restare intatti.');
+
     fwrite(STDOUT, "Test storage documenti condivisi completato: {$path}\n");
 } finally {
     remove_tree($root);

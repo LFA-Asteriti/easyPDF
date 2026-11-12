@@ -11,6 +11,25 @@ function document_file_path(int $organizationId, string $storageName): string
     return storage_path("organizations/{$organizationId}/documents/{$storageName}.pdf");
 }
 
+function remove_organization_document_files(int $organizationId, array $storageNames): void
+{
+    foreach ($storageNames as $storageName) {
+        if (!is_string($storageName)) {
+            error_log('easyPDF: identificativo documento non valido durante la pulizia.');
+            continue;
+        }
+        try {
+            $path = document_file_path($organizationId, $storageName);
+        } catch (RuntimeException $error) {
+            error_log('easyPDF: identificativo documento non valido durante la pulizia: ' . $error->getMessage());
+            continue;
+        }
+        if (is_file($path) && !@unlink($path)) {
+            error_log('easyPDF: impossibile rimuovere un documento condiviso dell’organizzazione ' . $organizationId);
+        }
+    }
+}
+
 function document_original_name(string $name): string
 {
     $clean = trim(basename(str_replace('\\', '/', $name)));
