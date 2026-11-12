@@ -28,6 +28,7 @@ fn help_commands_follow_configured_portal() {
 #[test]
 fn about_shows_easy_pdf_without_contributors() {
     let h = harness(|app| app.dialog = Some(Dialog::About));
-    assert!(h.query_by_label("easyPDF by Massimo Bertolucci").is_some());
-    assert!(h.query_by_label("Contributors").is_none());
+    assert!(h.query_all_by_label("easyPDF by Massimo Bertolucci").next().is_some());
+    assert_eq!(h.query_all_by_label("Contributors").count(), 0);
 }
+
