@@ -487,8 +487,16 @@ mod host {
                 }
                 Transport::Page { canvas } => {
                     let name = string(&message.clone().into(), "type").ok_or("host message has no type")?;
+                    let detail = js_sys::Object::new();
+                    for key in js_sys::Object::keys(message).iter() {
+                        if key.as_string().as_deref() == Some("type") {
+                            continue;
+                        }
+                        let value = js_sys::Reflect::get(message, &key).map_err(|e| format!("{e:?}"))?;
+                        js_sys::Reflect::set(&detail, &key, &value).map_err(|e| format!("{e:?}"))?;
+                    }
                     let init = web_sys::CustomEventInit::new();
-                    init.set_detail(&message.clone().into());
+                    init.set_detail(&detail.into());
                     let event = web_sys::CustomEvent::new_with_event_init_dict(&name, &init)
                         .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))?;
                     canvas.dispatch_event(&event).map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))?;
@@ -583,8 +591,9 @@ mod host {
         }
         let name = string(data, "name").unwrap_or_default();
         let name = name.rsplit(['/', '\\']).next().unwrap_or_default();
-        let name: String = name.chars().filter(|c| !c.is_control()).take(255).collect();
-        let name = if name.trim().is_empty() || name == "." || name == ".." { "document.pdf".to_string() } else { name };
+        let name: String = name.chars().filter(|c| !c.is_control()).collect();
+        let name = name.trim();
+        let name = if name.is_empty() || name == "." || name == ".." { "document.pdf".to_string() } else { name.chars().take(255).collect() };
         let Ok(bytes) = js_sys::Reflect::get(data, &JsValue::from_str("bytes")) else { return };
         let array = if let Some(array) = bytes.dyn_ref::<js_sys::Uint8Array>() {
             array.clone()

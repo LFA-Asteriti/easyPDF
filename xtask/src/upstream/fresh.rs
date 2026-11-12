@@ -882,7 +882,7 @@ fn apply_web_host(root: &Path, stage: &Path, release: &str, backup_label: &str) 
     atomic_write(&manifest_backup, &manifest_before)?;
     let web_source: &[u8] = if release == "v0.19.0" {
         let template = include_bytes!("fresh/web_host_v019.rs");
-        if sha256(template) != "49de8d106e4bb8ff8bf6b82c07297c7007baf66e9fc4c94a97e114a00c905fb5" {
+        if sha256(template) != "3487b173b56366b1b51588f652e3d0e51a7a607931bff1b34a0860144b160c7b" {
             bail!("review required: easyPDF v0.19 page-host template changed");
         }
         template
