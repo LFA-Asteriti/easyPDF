@@ -225,6 +225,33 @@ pub fn show(app: &mut EasyPdfApp, ui: &mut egui::Ui) {
                 .fill(t.card)
                 .stroke(Stroke::new(1.0, t.border))
                 .corner_radius(CornerRadius::same(12))
+                .inner_margin(egui::Margin::same(14))
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    ui.horizontal(|ui| {
+                        widgets::brand_mark(ui, 28.0);
+                        ui.label(egui::RichText::new("easyPDF by Massimo Bertolucci").font(theme::semibold(15.0)));
+                    });
+                    ui.add_space(8.0);
+                    let mut open = None;
+                    ui.horizontal_wrapped(|ui| {
+                        ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
+                        for (index, link) in easypdf_engine::links::LINKS.iter().enumerate() {
+                            if widgets::icon_pill(ui, link.icon, tl!(link.label), index == 0).on_hover_text(link.url).clicked() {
+                                open = Some(link.command);
+                            }
+                        }
+                    });
+                    if let Some(command) = open {
+                        app.execute(command);
+                    }
+                });
+            ui.add_space(22.0);
+
+            egui::Frame::NONE
+                .fill(t.card)
+                .stroke(Stroke::new(1.0, t.border))
+                .corner_radius(CornerRadius::same(12))
                 .inner_margin(egui::Margin::same(18))
                 .show(ui, |ui| {
                     ui.set_width(ui.available_width());

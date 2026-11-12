@@ -60,8 +60,8 @@ const COVER_TRANSLATIONS: [(&str, &str); 44] = [
     ("zh-hant", "套用封面"),
 ];
 
-const IT_COVER_DIALOG_SOURCE: &str = r#"// easyPDF-specific dialog text absent from the pinned upstream catalogs.
-const IT_COVER_DIALOG_TRANSLATIONS: &[(&str, &str)] = &[
+const IT_COVER_DIALOG_SOURCE: &str = r#"// easyPDF-specific text absent from the pinned upstream catalogs.
+const IT_EASYPDF_TRANSLATIONS: &[(&str, &str)] = &[
     ("Insert every front-cover page before the document and every back-cover page after it.", "Inserisci le pagine della cover frontale prima del documento e quelle della cover posteriore dopo."),
     ("Choose a cover kit", "Scegli un kit cover"),
     ("Front cover", "Cover frontale"),
@@ -72,6 +72,8 @@ const IT_COVER_DIALOG_TRANSLATIONS: &[(&str, &str)] = &[
     ("Cover kit name", "Nome del kit cover"),
     ("Use as default cover kit", "Usa come kit cover predefinito"),
     ("The covers are applied as one undoable change.", "Le cover vengono applicate con un'unica modifica annullabile."),
+    ("easyPDF support", "Supporto easyPDF"),
+    ("easyPDF documentation", "Documentazione easyPDF"),
 ];"#;
 
 pub(super) fn apply(root: &Path, stage: &Path, backup_label: &str) -> Result<()> {
@@ -111,7 +113,7 @@ pub(super) fn apply(root: &Path, stage: &Path, backup_label: &str) -> Result<()>
         }
         if code == "it" {
             branded.push_str("\n\teasyPDF processes local files on your device. The protected web edition uses your authorized account.\teasyPDF elabora i file locali sul dispositivo. La versione web protetta utilizza il tuo account autorizzato.\n");
-            for (source, translation) in IT_COVER_DIALOG_TRANSLATIONS {
+            for (source, translation) in IT_EASYPDF_TRANSLATIONS {
                 branded.push_str(&format!("\t{source}\t{translation}\n"));
             }
         }"#;
