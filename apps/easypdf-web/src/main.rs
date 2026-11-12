@@ -21,6 +21,8 @@ fn main() {
         else {
             return;
         };
+        let host_canvas = canvas.clone();
+        let error_canvas = canvas.clone();
         let started = eframe::WebRunner::new()
             .start(
                 canvas,
@@ -127,11 +129,8 @@ fn main() {
                     // eframe never raises a close request on a browser reload or tab close, so `guard_quit` never
                     // prompts; ask the browser to confirm instead while a document has unsaved work (#812).
                     warn_before_unload(app.unsaved_flag.clone());
-                    // `?host=parent`: a same-origin page embedding easyPDF in an iframe (such
-                    // as the Nextcloud app) passes files in and takes saves back (`host` below).
-                    if query_param("host").as_deref() == Some("parent")
-                        && let Some(bridge) = host::Bridge::new()
-                    {
+                    // A same-origin iframe or a page hosting the canvas receives files and saves.
+                    if let Some(bridge) = host::Bridge::connect(&host_canvas) {
                         // `?author=`: the host's name for the user signs their comments,
                         // unless they chose a name in easyPDF (the web default is "Guest").
                         if let Some(author) = query_param("author").map(|a| a.trim().to_string()).filter(|a| !a.is_empty())
@@ -154,9 +153,7 @@ fn main() {
             .await;
         if let Err(e) = started {
             eframe::web_sys::console::error_1(&e);
-            if query_param("host").as_deref() == Some("parent")
-                && let Some(bridge) = host::Bridge::new()
-            {
+            if let Some(bridge) = host::Bridge::connect(&error_canvas) {
                 bridge.post_failed(&e.as_string().unwrap_or_else(|| format!("{e:?}")));
             }
         }
@@ -431,8 +428,8 @@ async fn fetch_bytes(url: &str) -> Result<Vec<u8>, String> {
     Ok(js_sys::Uint8Array::new(&buf).to_vec())
 }
 
-/// The `postMessage` bridge to a same-origin parent page. Messages are plain objects with a
-/// `type`:
+/// The host bridge uses postMessage for a same-origin parent iframe or CustomEvents on a
+/// `data-host="page"` canvas. Parent mode wins when both are requested.
 ///
 /// - `easypdf:ready` (to the parent): the app is listening; send files now.
 /// - `easypdf:open` (from the parent): `{ name, bytes }`, where `bytes` is an `ArrayBuffer` or
@@ -442,45 +439,71 @@ async fn fetch_bytes(url: &str) -> Result<Vec<u8>, String> {
 /// - `easypdf:dirty` (to the parent): `{ dirty }` whenever unsaved work appears or goes away.
 /// - `easypdf:failed` (to the parent): `{ error }` when the app couldn't start.
 ///
-/// Only the parent window on the app's own origin is heard or answered.
+/// Parent messages are restricted to the same origin and the actual framing window.
 #[cfg(target_arch = "wasm32")]
 mod host {
     use eframe::wasm_bindgen::{JsCast, JsValue, closure::Closure};
 
     #[derive(Clone)]
     pub struct Bridge {
-        window: web_sys::Window,
-        parent: web_sys::Window,
-        origin: String,
+        transport: Transport,
+    }
+
+    #[derive(Clone)]
+    enum Transport {
+        Parent { window: web_sys::Window, parent: web_sys::Window, origin: String },
+        Page { canvas: web_sys::EventTarget },
     }
 
     impl Bridge {
-        /// `None` when the page is unframed or its parent is on another origin.
-        /// Otherwise postMessage saves would disappear while the document looked saved.
-        pub fn new() -> Option<Self> {
+        /// A cross-origin iframe has no bridge, so saves fall back to downloads.
+        pub fn connect(canvas: &web_sys::HtmlCanvasElement) -> Option<Self> {
             let window = web_sys::window()?;
-            let parent = window.parent().ok().flatten()?;
-            if js_sys::Object::is(&parent, &window) {
-                return None;
+            if super::query_param("host").as_deref() == Some("parent") {
+                let parent = window.parent().ok().flatten()?;
+                if js_sys::Object::is(&parent, &window) {
+                    return None;
+                }
+                let origin = window.location().origin().ok()?;
+                if parent.location().origin().ok()? != origin {
+                    return None;
+                }
+                Some(Self { transport: Transport::Parent { window, parent, origin } })
+            } else if canvas.get_attribute("data-host").as_deref() == Some("page") {
+                Some(Self { transport: Transport::Page { canvas: canvas.clone().into() } })
+            } else {
+                None
             }
-            let origin = window.location().origin().ok()?;
-            // Reading a cross-origin parent's location throws; do not create a save bridge.
-            if parent.location().origin().ok()? != origin {
-                return None;
-            }
-            Some(Self { window, parent, origin })
         }
 
         fn post(&self, message: &js_sys::Object, transfer: Option<&JsValue>) -> Result<(), String> {
-            let sent = match transfer {
-                Some(t) => self.parent.post_message_with_transfer(message, &self.origin, &js_sys::Array::of1(t)),
-                None => self.parent.post_message(message, &self.origin),
-            };
-            sent.map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
+            match &self.transport {
+                Transport::Parent { parent, origin, .. } => {
+                    let sent = match transfer {
+                        Some(t) => parent.post_message_with_transfer(message, origin, &js_sys::Array::of1(t)),
+                        None => parent.post_message(message, origin),
+                    };
+                    sent.map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
+                }
+                Transport::Page { canvas } => {
+                    let name = string(&message.clone().into(), "type").ok_or("host message has no type")?;
+                    let init = web_sys::CustomEventInit::new();
+                    init.set_detail(&message.clone().into());
+                    let event = web_sys::CustomEvent::new_with_event_init_dict(&name, &init)
+                        .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))?;
+                    canvas.dispatch_event(&event).map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))?;
+                    Ok(())
+                }
+            }
         }
 
         pub fn post_ready(&self) {
-            if let Some(m) = message(&[("type", "easypdf:ready".into()), ("version", env!("CARGO_PKG_VERSION").into())]) {
+            if let Some(m) = message(&[
+                ("type", "easypdf:ready".into()),
+                ("version", "1".into()),
+                ("appVersion", env!("CARGO_PKG_VERSION").into()),
+                ("file", false.into()),
+            ]) {
                 let _ = self.post(&m, None);
             }
         }
@@ -494,33 +517,26 @@ mod host {
 
         /// Hear `easypdf:open` from the parent and queue the file like a `?file=` download.
         pub fn listen(&self, inbox: easypdf_ui_egui::Inbox, ctx: egui::Context) {
-            let parent = self.parent.clone();
-            let origin = self.origin.clone();
-            let on_message = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |event: web_sys::MessageEvent| {
-                if event.origin() != origin || !event.source().is_some_and(|s| js_sys::Object::is(&s, &parent)) {
-                    return;
+            match &self.transport {
+                Transport::Parent { window, parent, origin } => {
+                    let (parent, origin, window) = (parent.clone(), origin.clone(), window.clone());
+                    let on_message = Closure::<dyn Fn(web_sys::MessageEvent)>::new(move |event: web_sys::MessageEvent| {
+                        if event.origin() == origin && event.source().is_some_and(|s| js_sys::Object::is(&s, &parent)) {
+                            queue_open(&event.data(), &inbox, &ctx);
+                        }
+                    });
+                    if window.add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref()).is_ok() {
+                        on_message.forget();
+                    }
                 }
-                let data = event.data();
-                if string(&data, "type").as_deref() != Some("easypdf:open") {
-                    return;
+                Transport::Page { canvas } => {
+                    let on_event = Closure::<dyn Fn(web_sys::CustomEvent)>::new(move |event: web_sys::CustomEvent| {
+                        queue_open(&event.detail(), &inbox, &ctx);
+                    });
+                    if canvas.add_event_listener_with_callback("easypdf:open", on_event.as_ref().unchecked_ref()).is_ok() {
+                        on_event.forget();
+                    }
                 }
-                let name = string(&data, "name").filter(|n| !n.trim().is_empty()).unwrap_or_else(|| "document.pdf".to_string());
-                let Ok(bytes) = js_sys::Reflect::get(&data, &JsValue::from_str("bytes")) else { return };
-                let bytes = if let Some(array) = bytes.dyn_ref::<js_sys::Uint8Array>() {
-                    array.to_vec()
-                } else if bytes.is_instance_of::<js_sys::ArrayBuffer>() {
-                    js_sys::Uint8Array::new(&bytes).to_vec()
-                } else {
-                    return;
-                };
-                if let Ok(mut q) = inbox.lock() {
-                    q.push((name, bytes));
-                }
-                ctx.request_repaint();
-            });
-            if self.window.add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref()).is_ok() {
-                // The listener lives as long as the page.
-                on_message.forget();
             }
         }
 
@@ -559,6 +575,32 @@ mod host {
 
     fn string(data: &JsValue, key: &str) -> Option<String> {
         js_sys::Reflect::get(data, &JsValue::from_str(key)).ok()?.as_string()
+    }
+
+    fn queue_open(data: &JsValue, inbox: &easypdf_ui_egui::Inbox, ctx: &egui::Context) {
+        if string(data, "type").as_deref().is_some_and(|kind| kind != "easypdf:open") {
+            return;
+        }
+        let name = string(data, "name").unwrap_or_default();
+        let name = name.rsplit(['/', '\\']).next().unwrap_or_default();
+        let name: String = name.chars().filter(|c| !c.is_control()).take(255).collect();
+        let name = if name.trim().is_empty() || name == "." || name == ".." { "document.pdf".to_string() } else { name };
+        let Ok(bytes) = js_sys::Reflect::get(data, &JsValue::from_str("bytes")) else { return };
+        let array = if let Some(array) = bytes.dyn_ref::<js_sys::Uint8Array>() {
+            array.clone()
+        } else if bytes.is_instance_of::<js_sys::ArrayBuffer>() {
+            js_sys::Uint8Array::new(&bytes)
+        } else {
+            return;
+        };
+        if array.length() as u64 > 512 << 20 {
+            eframe::web_sys::console::warn_1(&"easyPDF: host file exceeds the 512 MiB open limit".into());
+            return;
+        }
+        if let Ok(mut q) = inbox.lock() {
+            q.push((name, array.to_vec()));
+        }
+        ctx.request_repaint();
     }
 }
 
