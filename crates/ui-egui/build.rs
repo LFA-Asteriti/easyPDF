@@ -60,6 +60,23 @@ const EASY_PDF_COVER_TRANSLATIONS: &[(&str, &str)] = &[
     ("zh-hant", "套用封面"),
 ];
 
+// easyPDF-specific dialog text absent from the pinned upstream catalogs.
+const IT_COVER_DIALOG_TRANSLATIONS: &[(&str, &str)] = &[
+    (
+        "Insert every front-cover page before the document and every back-cover page after it.",
+        "Inserisci le pagine della cover frontale prima del documento e quelle della cover posteriore dopo.",
+    ),
+    ("Choose a cover kit", "Scegli un kit cover"),
+    ("Front cover", "Cover frontale"),
+    ("Back cover", "Cover posteriore"),
+    ("Not selected", "Non selezionata"),
+    ("Choose PDF…", "Scegli PDF…"),
+    ("Save these covers as a kit", "Salva queste cover come kit"),
+    ("Cover kit name", "Nome del kit cover"),
+    ("Use as default cover kit", "Usa come kit cover predefinito"),
+    ("The covers are applied as one undoable change.", "Le cover vengono applicate con un'unica modifica annullabile."),
+];
+
 /// `CRAFT_I18N` from `CRAFT_I18N_DIR`: the `Embedded` list the craft-i18n crate reads.
 fn craft_i18n(out_dir: &std::path::Path) -> String {
     println!("cargo::rerun-if-env-changed=CRAFT_I18N_DIR");
@@ -136,6 +153,9 @@ fn locales(dir: &std::path::Path, out_dir: &std::path::Path) -> Result<Vec<Local
         }
         if code == "it" {
             branded.push_str("\n\teasyPDF processes local files on your device. The protected web edition uses your authorized account.\teasyPDF elabora i file locali sul dispositivo. La versione web protetta utilizza il tuo account autorizzato.\n");
+            for (source, translation) in IT_COVER_DIALOG_TRANSLATIONS {
+                branded.push_str(&format!("\t{source}\t{translation}\n"));
+            }
         }
         let branded_path = out_dir.join(format!("easypdf-{code}.tsv"));
         std::fs::write(&branded_path, branded).map_err(|e| format!("{}: {e}", branded_path.display()))?;

@@ -50,6 +50,18 @@ Serve Rust 1.95 o successivo. Su Windows occorrono inoltre i Microsoft C++ Build
 
 Dalla cartella principale del progetto:
 
+Per usare la lingua del sistema anche nelle compilazioni locali, prepara una volta
+i cataloghi alla revisione fissata per questa release. Senza cataloghi, la build
+di sviluppo mostra soltanto l'inglese.
+
+```powershell
+$catalog = Join-Path (Get-Location) 'target\craft-i18n'
+if (-not (Test-Path $catalog)) { git clone https://github.com/storytold/craft-i18n.git $catalog }
+git -C $catalog checkout --detach 575cfdef63227b14daf173b8cc87928bfdfa325e
+$env:CRAFT_I18N_DIR = $catalog
+$env:CRAFT_I18N_REQUIRED = '1'
+```
+
 ```powershell
 # Avvia l'app desktop
 cargo run -p easypdf
