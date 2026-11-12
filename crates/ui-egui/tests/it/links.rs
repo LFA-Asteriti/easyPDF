@@ -31,4 +31,3 @@ fn about_shows_easy_pdf_without_contributors() {
     assert!(h.query_all_by_label("easyPDF by Massimo Bertolucci").next().is_some());
     assert_eq!(h.query_all_by_label("Contributors").count(), 0);
 }
-
