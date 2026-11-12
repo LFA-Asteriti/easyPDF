@@ -28,7 +28,7 @@ easypdf-render = { workspace = true }
 easypdf-model = { workspace = true }
 easypdf-platform = { workspace = true }
 egui = { workspace = true, features = ["bytemuck", "default_fonts", "monochrome_emoji_fonts"] }
-egui_extras = { workspace = true }
+egui_extras = { workspace = true, features = ["image"] }
 eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "persistence", "links", "clipboard"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -43,6 +43,7 @@ bytemuck = { version = "1", features = ["extern_crate_alloc"] }
 
 rfd = { workspace = true }
 png = "0.18"
+image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.23"
 # Unicode bidi paragraph segmentation for right-to-left comment wrapping; egui 0.37's epaint owns
 # display reordering. Already in the tree through egui’s epaint.
@@ -97,7 +98,6 @@ egui_kittest = { workspace = true, features = ["eframe", "wgpu"] }
 # Tests draw easyPDF text without a system provider: the bundled and monochrome emoji faces must
 # be enabled on the test graph itself (a dependency's dev-features do not propagate).
 egui = { workspace = true, features = ["default_fonts", "monochrome_emoji_fonts"] }
-image = { version = "0.25", default-features = false, features = ["png"] }
 # Glyph-coverage test of the interface fonts; the same skrifa easypdf-fonts already uses.
 skrifa = "0.44"
 proptest = { workspace = true }
