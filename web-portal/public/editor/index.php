@@ -58,7 +58,8 @@ if ($extension === 'html') {
     }
 }
 
-header("Content-Security-Policy: default-src 'self'; script-src {$scriptPolicy}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; font-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'");
+header('X-Frame-Options: SAMEORIGIN');
+header("Content-Security-Policy: default-src 'self'; script-src {$scriptPolicy}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self' blob:; font-src 'self'; object-src 'none'; frame-ancestors 'self'; base-uri 'self'");
 header('Content-Type: ' . $mimeTypes[$extension]);
 header('Content-Length: ' . ($contents === null ? filesize($file) : strlen($contents)));
 header($extension === 'html' ? 'Cache-Control: private, no-store' : 'Cache-Control: private, max-age=31536000, immutable');
