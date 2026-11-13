@@ -1,0 +1,86 @@
+[
+  {
+    "crate": "easypdf-cli",
+    "name": "hyper",
+    "reachable": true,
+    "path": "easypdf-cli -> easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> hyper"
+  },
+  {
+    "crate": "easypdf-cli",
+    "name": "reqwest",
+    "reachable": true,
+    "path": "easypdf-cli -> easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest"
+  },
+  {
+    "crate": "easypdf-cli",
+    "name": "socket2",
+    "reachable": true,
+    "path": "easypdf-cli -> easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> hyper-util -> socket2"
+  },
+  {
+    "crate": "easypdf-cli",
+    "name": "tokio",
+    "reachable": true,
+    "path": "easypdf-cli -> easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> tokio"
+  },
+  {
+    "crate": "easypdf-cli",
+    "name": "ureq",
+    "reachable": true,
+    "path": "easypdf-cli -> easypdf-automation -> ureq"
+  },
+  {
+    "crate": "easypdf-automation",
+    "name": "hyper",
+    "reachable": true,
+    "path": "easypdf-automation -> easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> hyper"
+  },
+  {
+    "crate": "easypdf-automation",
+    "name": "reqwest",
+    "reachable": true,
+    "path": "easypdf-automation -> easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest"
+  },
+  {
+    "crate": "easypdf-automation",
+    "name": "socket2",
+    "reachable": true,
+    "path": "easypdf-automation -> easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> hyper-util -> socket2"
+  },
+  {
+    "crate": "easypdf-automation",
+    "name": "tokio",
+    "reachable": true,
+    "path": "easypdf-automation -> easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> tokio"
+  },
+  {
+    "crate": "easypdf-automation",
+    "name": "ureq",
+    "reachable": true,
+    "path": "easypdf-automation -> ureq"
+  },
+  {
+    "crate": "easypdf-engine",
+    "name": "hyper",
+    "reachable": true,
+    "path": "easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> hyper"
+  },
+  {
+    "crate": "easypdf-engine",
+    "name": "reqwest",
+    "reachable": true,
+    "path": "easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest"
+  },
+  {
+    "crate": "easypdf-engine",
+    "name": "socket2",
+    "reachable": true,
+    "path": "easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> hyper-util -> socket2"
+  },
+  {
+    "crate": "easypdf-engine",
+    "name": "tokio",
+    "reachable": true,
+    "path": "easypdf-engine -> easypdf-print -> craft-print -> winprint -> reqwest -> tokio"
+  }
+]

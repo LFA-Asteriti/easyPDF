@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=easyPDF
+GenericName=PDF Editor
+Comment=Read, organize, combine, split and secure PDFs
+Exec=easypdf %U
+TryExec=easypdf
+Icon=it.twinba.easypdf
+Terminal=false
+StartupNotify=true
+StartupWMClass=it.twinba.easypdf
+Categories=Office;Viewer;
+Keywords=pdf;viewer;editor;annotate;sign;forms;merge;split;
+MimeType=application/pdf;

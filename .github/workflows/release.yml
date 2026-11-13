@@ -1,0 +1,237 @@
+name: easyPDF unsigned desktop release
+
+# Run only after the source PR has merged and the normal CI is green.
+# Artifacts are unsigned. This workflow creates a draft for a final download check.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 180
+    env:
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+      CRAFT_FONTS_REQUIRED: '1'
+      CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
+      CRAFT_I18N_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-fonts
+          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
+          path: craft-fonts
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-i18n
+          ref: 575cfdef63227b14daf173b8cc87928bfdfa325e
+          path: craft-i18n
+          persist-credentials: false
+      - name: Install Rust and WiX
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add x86_64-pc-windows-msvc
+          $tools = Join-Path $env:RUNNER_TEMP 'easypdf-wix'
+          dotnet tool install --tool-path $tools wix --version 5.0.2
+          if ($LASTEXITCODE -ne 0) { throw 'WiX install failed' }
+          $tools >> $env:GITHUB_PATH
+      - name: Package Windows x64
+        shell: pwsh
+        run: ./packaging/windows/package.ps1 -Arch x64
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: easypdf-windows
+          path: dist/release/*windows-x64*
+          if-no-files-found: error
+
+  linux:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    env:
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+      CRAFT_FONTS_REQUIRED: '1'
+      CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
+      CRAFT_I18N_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-fonts
+          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
+          path: craft-fonts
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-i18n
+          ref: 575cfdef63227b14daf173b8cc87928bfdfa325e
+          path: craft-i18n
+          persist-credentials: false
+      - name: Install build libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libgtk-3-dev
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      - name: Package Linux x64
+        run: bash packaging/linux/package.sh --formats 'tar cli'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: easypdf-linux
+          path: dist/release/*linux-x86_64.tar.gz
+          if-no-files-found: error
+
+  macos:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-15
+    timeout-minutes: 180
+    env:
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+      CRAFT_FONTS_REQUIRED: '1'
+      CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
+      CRAFT_I18N_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-fonts
+          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
+          path: craft-fonts
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-i18n
+          ref: 575cfdef63227b14daf173b8cc87928bfdfa325e
+          path: craft-i18n
+          persist-credentials: false
+      - name: Install Rust targets
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - name: Package universal macOS DMG
+        run: bash packaging/macos/package.sh --arch universal
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: easypdf-macos
+          path: |
+            dist/release/*macos-universal.dmg
+            dist/release/*macos-universal.zip
+          if-no-files-found: error
+
+  web-host:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    env:
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+      CRAFT_FONTS_REQUIRED: '1'
+      CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
+      CRAFT_I18N_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-fonts
+          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
+          path: craft-fonts
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-i18n
+          ref: 575cfdef63227b14daf173b8cc87928bfdfa325e
+          path: craft-i18n
+          persist-credentials: false
+      - name: Install web toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add wasm32-unknown-unknown
+          cargo install trunk --locked --version 0.21.14
+      - name: Build web editor and server CLI
+        run: |
+          cargo build --release --locked -p easypdf-cli
+          (cd apps/easypdf-web && trunk build --release --public-url /editor/)
+      - name: Assemble authenticated web host
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(awk '/^\[workspace.package\]/{in_pkg=1;next} /^\[/{in_pkg=0} in_pkg && /^version = / {gsub(/"/, "", $3); print $3; exit}' Cargo.toml)
+          test -n "$version"
+          mkdir -p dist/web-host/{public,src,database,bin,editor-dist} dist/web-host/public/assets/{icons,platform,home} dist/release
+          cp -a web-portal/public/. dist/web-host/public/
+          cp -a web-portal/src/. dist/web-host/src/
+          cp -a web-portal/database/. dist/web-host/database/
+          cp web-portal/bin/{cleanup-jobs,create-user,migrate-connected-app}.php dist/web-host/bin/
+          grep -v '^TEST_PASSWORD=' web-portal/.env.example > dist/web-host/.env.example
+          cp -a assets/icons/. dist/web-host/public/assets/icons/
+          cp assets/app-icon/{Windows_11,Apple,Linux}.svg dist/web-host/public/assets/platform/
+          cp assets/easypdf/easyPDF-home-{1,2,3,4}.jpg dist/web-host/public/assets/home/
+          cp -a dist/web/. dist/web-host/editor-dist/
+          cp target/release/easypdf-cli dist/web-host/bin/
+          cp ATTRIBUTION.toml ATTRIBUTION.md NOTICE LICENSE-MIT LICENSE-APACHE assets/LICENSE-easyPDF-brand.txt dist/web-host/
+          mkdir -p dist/web-host/font-licences
+          cp assets/fonts/OFL-*.txt dist/web-host/font-licences/
+          for ofl in craft-fonts/fonts/*/OFL.txt; do
+            family=$(basename "$(dirname "$ofl")")
+            cp "$ofl" "dist/web-host/font-licences/OFL-$family.txt"
+          done
+          (cd dist && zip -qr "release/easypdf-web-host-$version.zip" web-host)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: easypdf-web-host
+          path: dist/release/*web-host*.zip
+          if-no-files-found: error
+
+  draft:
+    if: github.ref == 'refs/heads/main'
+    needs: [windows, linux, macos, web-host]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: easypdf-*
+          path: dist/release
+          merge-multiple: true
+      - name: Check version and checksums
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(awk '/^\[workspace.package\]/{in_pkg=1;next} /^\[/{in_pkg=0} in_pkg && /^version = / {gsub(/"/, "", $3); print $3; exit}' Cargo.toml)
+          test -n "$version"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          (cd dist/release && sha256sum ./* > SHA256SUMS.txt)
+          printf '%s\n' "easyPDF v$version beta — pacchetti desktop non firmati." "Windows può mostrare SmartScreen; macOS può richiedere l'apertura manuale in Impostazioni di sistema." "La versione web richiede il portale autenticato e viene distribuita separatamente." > dist/release/RELEASE-NOTES.txt
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.release.outputs.version }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; review it instead of overwriting its assets" >&2
+            exit 1
+          fi
+          gh release create "$tag" dist/release/* --draft --prerelease --title "easyPDF $tag" --notes-file dist/release/RELEASE-NOTES.txt --target "$GITHUB_SHA"

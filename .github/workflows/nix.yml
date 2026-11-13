@@ -1,0 +1,23 @@
+# Evaluates the Nix flake (no build, about a minute): `nix build` / `nix develop` stop at evaluation
+# when Cargo.lock gains something nix/package.nix can't vendor, and nothing else would notice.
+name: Nix
+
+on:
+  push:
+    branches: [main]
+    paths: ["flake.nix", "flake.lock", "nix/**", "Cargo.lock", ".github/workflows/nix.yml"]
+  pull_request:
+    paths: ["flake.nix", "flake.lock", "nix/**", "Cargo.lock", ".github/workflows/nix.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nix:
+    # Reviewed shared workflow pinned for this easyPDF release.
+    uses: storytold/craft-common-actions/.github/workflows/nix.yml@91e2c7617393ce0dfbe67ef5daf7254ade368203
