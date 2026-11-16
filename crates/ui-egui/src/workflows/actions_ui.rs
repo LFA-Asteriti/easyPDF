@@ -96,6 +96,10 @@ impl EasyPdfApp {
         }
         let progress = Arc::new(Mutex::new(RunProgress { total: files.len(), ..Default::default() }));
         let p = progress.clone();
+        #[cfg(target_arch = "wasm32")]
+        let batch = crate::editing::WebBatchWrites::new();
+        #[cfg(target_arch = "wasm32")]
+        let queued = batch.clone();
         // The summary is written on the worker thread: draw it in the UI's language.
         let lang = crate::i18n::current();
         let work = move || {
@@ -109,7 +113,7 @@ impl EasyPdfApp {
                     #[cfg(not(target_arch = "wasm32"))]
                     write_result(&dir, &name, &r.bytes).map_err(|e| e.to_string())?;
                     #[cfg(target_arch = "wasm32")]
-                    crate::editing::download(&name, &r.bytes)?;
+                    queued.queue(&name, &r.bytes);
                     Ok(())
                 });
                 match r {
@@ -117,16 +121,21 @@ impl EasyPdfApp {
                     Err(e) => failed.push(format!("{name}: {}", e)),
                 }
             }
+            #[cfg(not(target_arch = "wasm32"))]
             let done =
                 if ok == 1 { crate::i18n::fmt(tl!("1 file done"), &[]) } else { crate::i18n::fmt(tl!("{n} files done"), &[("n", &ok.to_string())]) };
+            #[cfg(target_arch = "wasm32")]
+            let done = crate::i18n::fmt(tl!("{n} files prepared; choose destinations"), &[("n", &ok.to_string())]);
             let mut msg = format!("{}: {done}", action.name);
-            if !failed.is_empty() {
-                msg.push_str(&crate::i18n::fmt(tl!("; failed: {list}"), &[("list", &failed.join("; "))]));
+            let failed_detail = (!failed.is_empty()).then(|| crate::i18n::fmt(tl!("; failed: {list}"), &[("list", &failed.join("; "))]));
+            if let Some(detail) = &failed_detail {
+                msg.push_str(detail);
             }
             if let Ok(mut s) = p.lock() {
                 s.done = s.total;
                 s.message = Some(msg);
             }
+            failed_detail
         };
         #[cfg(not(target_arch = "wasm32"))]
         if self.run_inline {
@@ -135,9 +144,11 @@ impl EasyPdfApp {
             std::thread::Builder::new().name("easypdf-action".into()).spawn(work).ok();
         }
         #[cfg(target_arch = "wasm32")]
-        work();
+        let failed_detail = work();
         self.action_run = Some(progress);
         self.poll_action();
+        #[cfg(target_arch = "wasm32")]
+        batch.finish(self, failed_detail.map(|detail| detail.trim_start_matches("; ").to_string()));
     }
 
     /// Show the running action's progress, and its summary when done.

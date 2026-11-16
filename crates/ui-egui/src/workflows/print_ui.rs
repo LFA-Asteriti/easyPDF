@@ -528,10 +528,15 @@ impl EasyPdfApp {
         };
         let stem = name.trim_end_matches(".pdf").trim_end_matches(".PDF");
         let file = format!("{stem} (print).pdf");
-        match crate::editing::download(&file, &pdf) {
-            Ok(()) => self.notify_fmt("Couldn't print from the browser ({e}); downloaded {name} to print instead", &[("e", error), ("name", &file)]),
-            Err(_) => self.notify_error(error),
-        }
+        self.notify_error(error);
+        crate::editing::download_then(&file.clone(), &pdf, move |app, outcome| match outcome {
+            Ok(crate::editing::WebSaveOutcome::Picked) => app.notify_fmt("Saved {name}", &[("name", &file)]),
+            Ok(crate::editing::WebSaveOutcome::DownloadedFallback) => {
+                app.notify_fmt("Download started: {name}", &[("name", &file)]);
+            }
+            Ok(crate::editing::WebSaveOutcome::Cancelled) => app.notify_tr("Cancelled"),
+            Err(e) => app.notify_fmt("Couldn't save {name}: {e}", &[("name", &file), ("e", &e)]),
+        });
     }
 
     /// Print ▸ Save as PDF on the desktop: write to `save_override` (tests and automation), or
@@ -567,16 +572,15 @@ impl EasyPdfApp {
     fn save_print_pdf(&mut self, name: &str, bytes: Vec<u8>) -> bool {
         let stem = name.trim_end_matches(".pdf").trim_end_matches(".PDF");
         let file = format!("{stem} (print).pdf");
-        match crate::editing::download(&file, &bytes) {
-            Ok(()) => {
-                self.notify_fmt("Downloaded {name}", &[("name", &file)]);
-                true
+        crate::editing::download_then(&file.clone(), &bytes, move |app, outcome| match outcome {
+            Ok(crate::editing::WebSaveOutcome::Picked) => app.notify_fmt("Saved {name}", &[("name", &file)]),
+            Ok(crate::editing::WebSaveOutcome::DownloadedFallback) => {
+                app.notify_fmt("Download started: {name}", &[("name", &file)]);
             }
-            Err(e) => {
-                self.notify_fmt("Couldn't download {name}: {e}", &[("name", &file), ("e", &e)]);
-                false
-            }
-        }
+            Ok(crate::editing::WebSaveOutcome::Cancelled) => app.notify_tr("Cancelled"),
+            Err(e) => app.notify_fmt("Couldn't save {name}: {e}", &[("name", &file), ("e", &e)]),
+        });
+        true
     }
 }
 

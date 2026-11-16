@@ -397,6 +397,10 @@ pub struct EasyPdfApp {
     pub connected_command: Option<connected::CommandFn>,
     pub connected_events: connected::EventQueue,
     pub web_logout: Option<Box<dyn FnMut()>>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) pending_web_saves: Vec<editing::PendingWebSave>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) pending_web_exports: std::collections::VecDeque<editing::WebExport>,
     /// The All tools view fills the workspace (its sidebar's expand button).
     pub all_tools_full: bool,
     pub all_tools_query: String,

@@ -800,13 +800,36 @@ impl EasyPdfApp {
         #[cfg(target_arch = "wasm32")]
         {
             let _ = title;
-            for (name, bytes) in &named {
-                if let Err(e) = crate::editing::download(name, bytes) {
-                    self.notify_fmt("Couldn't download {name}: {e}", &[("name", name), ("e", &e.to_string())]);
-                    return;
-                }
+            if named.is_empty() {
+                after(self);
+                return;
             }
-            after(self);
+            let state = Arc::new(std::sync::Mutex::new((named.len(), true, Some(Box::new(after) as Box<dyn FnOnce(&mut Self) + Send>))));
+            for (name, bytes) in &named {
+                let state = state.clone();
+                let name = name.clone();
+                crate::editing::download_then(&name.clone(), bytes, move |app, outcome| {
+                    let picked = matches!(outcome, Ok(crate::editing::WebSaveOutcome::Picked));
+                    match outcome {
+                        Ok(crate::editing::WebSaveOutcome::Picked) => app.notify_fmt("Saved {name}", &[("name", &name)]),
+                        Ok(crate::editing::WebSaveOutcome::DownloadedFallback) => {
+                            app.notify_fmt("Download started: {name}", &[("name", &name)]);
+                        }
+                        Ok(crate::editing::WebSaveOutcome::Cancelled) => app.notify_tr("Cancelled"),
+                        Err(e) => app.notify_fmt("Couldn't save {name}: {e}", &[("name", &name), ("e", &e)]),
+                    }
+                    let after = if let Ok(mut state) = state.lock() {
+                        state.0 -= 1;
+                        state.1 &= picked;
+                        if state.0 == 0 && state.1 { state.2.take() } else { None }
+                    } else {
+                        None
+                    };
+                    if let Some(after) = after {
+                        after(app);
+                    }
+                });
+            }
         }
     }
 

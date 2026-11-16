@@ -7,6 +7,11 @@ pub(crate) fn same_file(a: &str, b: &str) -> bool {
     a == b || matches!((std::path::absolute(a), std::path::absolute(b)), (Ok(x), Ok(y)) if x == y)
 }
 
+#[cfg(any(test, target_arch = "wasm32"))]
+fn browser_recent_path(name: &str) -> String {
+    format!("browser://local/{name}")
+}
+
 impl EasyPdfApp {
     /// Open a document the way it asks to be opened: navigation panel, layout, magnification,
     /// page and the place on it (Document Properties ▸ Initial View, `/OpenAction`). With Always
@@ -329,6 +334,11 @@ impl EasyPdfApp {
             self.select_mode(self.default_mode);
             self.left_open = left_open;
         }
+        // Browsers deliberately hide a picked file's local path. Keep an opaque, local-only key
+        // so opening a document is still visible in Recent after its tab closes. The key is
+        // metadata only: the PDF bytes remain in memory and are never persisted or uploaded.
+        #[cfg(target_arch = "wasm32")]
+        let path = path.or_else(|| Some(browser_recent_path(name)));
         if let Some(p) = path {
             #[cfg(target_os = "macos")]
             macos_association::repair(std::path::Path::new(&p));
@@ -781,5 +791,15 @@ impl EasyPdfApp {
         if let Some(id) = active {
             self.active = self.views.iter().position(|v| v.id == id);
         }
+    }
+}
+
+#[cfg(test)]
+mod recent_tests {
+    use super::browser_recent_path;
+
+    #[test]
+    fn browser_recent_key_keeps_the_visible_file_name() {
+        assert_eq!(browser_recent_path("contratto firmato.pdf"), "browser://local/contratto firmato.pdf");
     }
 }

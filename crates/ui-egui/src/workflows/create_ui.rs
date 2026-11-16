@@ -312,9 +312,13 @@ impl EasyPdfApp {
             }
         }
         #[cfg(target_arch = "wasm32")]
-        match crate::editing::download(&name, &bytes) {
-            Ok(()) => saved(self, name),
-            Err(e) => self.notify_fmt("Couldn't download {name}: {e}", &[("name", &name), ("e", &e.to_string())]),
-        }
+        crate::editing::download_then(&name.clone(), &bytes, move |app, outcome| match outcome {
+            Ok(crate::editing::WebSaveOutcome::Picked) => saved(app, name),
+            Ok(crate::editing::WebSaveOutcome::DownloadedFallback) => {
+                app.notify_fmt("Download started: {name}", &[("name", &name)]);
+            }
+            Ok(crate::editing::WebSaveOutcome::Cancelled) => app.notify_tr("Cancelled"),
+            Err(e) => app.notify_fmt("Couldn't save {name}: {e}", &[("name", &name), ("e", &e)]),
+        });
     }
 }

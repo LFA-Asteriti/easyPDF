@@ -588,6 +588,10 @@ impl EasyPdfApp {
         let p = progress.clone();
         // The summary is written on the worker thread: draw it in the UI's language.
         let lang = crate::i18n::current();
+        #[cfg(target_arch = "wasm32")]
+        let batch = crate::editing::WebBatchWrites::new();
+        #[cfg(target_arch = "wasm32")]
+        let queued = batch.clone();
         let work = move || {
             crate::i18n::set_current(lang);
             #[cfg(not(target_arch = "wasm32"))]
@@ -595,13 +599,17 @@ impl EasyPdfApp {
                 crate::editing::write_atomically(&dir.join(name).to_string_lossy(), &r.bytes).map_err(|e| e.to_string())
             };
             #[cfg(target_arch = "wasm32")]
-            let write = move |name: &str, r: &easypdf_engine::ocr::FileResult| crate::editing::download(name, &r.bytes);
+            let write = move |name: &str, r: &easypdf_engine::ocr::FileResult| {
+                queued.queue(name, &r.bytes);
+                Ok(())
+            };
             // A panic in the recognizer still ends the batch with a summary (#3919).
             let msg = easypdf_engine::guard(|| run_batch_files(files, settings, &recognizers, &p, write)).unwrap_or_else(|panic| failed(&panic));
             if let Ok(mut s) = p.lock() {
                 s.done = s.total;
-                s.message = Some(msg);
+                s.message = Some(msg.clone());
             }
+            msg
         };
         #[cfg(not(target_arch = "wasm32"))]
         if self.run_inline {
@@ -610,9 +618,16 @@ impl EasyPdfApp {
             std::thread::Builder::new().name("easypdf-ocr-files".into()).spawn(work).ok();
         }
         #[cfg(target_arch = "wasm32")]
-        work();
+        let detail = work();
         self.ocr_batch = Some(progress);
+        #[cfg(not(target_arch = "wasm32"))]
         self.poll_ocr();
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.ocr_batch = None;
+            self.notify(crate::i18n::fmt(tl!("{n} files prepared; choose destinations"), &[("n", &batch.queued().to_string())]));
+            batch.finish(self, Some(detail));
+        }
     }
 
     /// Ask the running batch to stop: the file in flight finishes, the rest are counted as not

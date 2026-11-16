@@ -275,14 +275,19 @@ impl EasyPdfApp {
         }
         #[cfg(target_arch = "wasm32")]
         {
+            let batch = crate::editing::WebBatchWrites::new();
             let msg =
                 run(ExportTask { src, kind, dpi, format, min_side, pages, stem, status: &status, lang: crate::i18n::current() }, |name, bytes| {
-                    crate::editing::download(name, &bytes)
+                    batch.queue(name, &bytes);
+                    Ok(())
                 });
+            let stopped = msg.starts_with(&crate::i18n::fmt(tl!("Export stopped: {e}"), &[("e", "")]));
+            let prepared = crate::i18n::fmt(tl!("{n} files prepared; choose destinations"), &[("n", &batch.queued().to_string())]);
             if let Ok(mut s) = status.lock() {
-                *s = Some((0, 0, Some(msg)));
+                *s = Some((0, 0, Some(if stopped { msg.clone() } else { prepared })));
             }
             self.export_status = Some(status);
+            batch.finish(self, stopped.then_some(msg));
         }
     }
 

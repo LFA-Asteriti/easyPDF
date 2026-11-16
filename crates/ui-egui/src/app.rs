@@ -196,6 +196,10 @@ impl EasyPdfApp {
             os_events: None,
             host_save: None,
             host_dirty: None,
+            #[cfg(target_arch = "wasm32")]
+            pending_web_saves: Vec::new(),
+            #[cfg(target_arch = "wasm32")]
+            pending_web_exports: Default::default(),
             close_request: None,
             save_prompt_button: Default::default(),
             save_prompt_seen: false,
@@ -475,6 +479,8 @@ impl eframe::App for EasyPdfApp {
     /// the quit guard, shortcuts, and the background jobs' results.
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.ctx = Some(ctx.clone());
+        #[cfg(target_arch = "wasm32")]
+        self.poll_web_saves();
         self.poll_connected_events();
         self.poll_connected_background(ctx);
         #[cfg(not(target_arch = "wasm32"))]
@@ -700,6 +706,8 @@ impl eframe::App for EasyPdfApp {
                 }
             });
             dialogs::show(self, &ctx);
+            #[cfg(target_arch = "wasm32")]
+            self.show_web_export_prompt(&ctx);
             // Notices too: a refused field value or a failed save must be seen in full screen.
             self.show_progress(&ctx);
             widgets::toast(self, &ctx);
@@ -753,6 +761,8 @@ impl eframe::App for EasyPdfApp {
         self.process_pending_edits();
         palette::show(self, &ctx);
         dialogs::show(self, &ctx);
+        #[cfg(target_arch = "wasm32")]
+        self.show_web_export_prompt(&ctx);
         self.show_progress(&ctx);
         widgets::toast(self, &ctx);
         self.finish_render_frame(&ctx);

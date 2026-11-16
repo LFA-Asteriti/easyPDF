@@ -35,6 +35,8 @@ impl EasyPdfApp {
         let mut used = HashSet::new();
         let mut made = 0usize;
         let mut refused = Vec::new();
+        #[cfg(target_arch = "wasm32")]
+        let batch = crate::editing::WebBatchWrites::new();
         for file in files {
             let (name, bytes) = match file {
                 Ok(file) => file,
@@ -78,7 +80,8 @@ impl EasyPdfApp {
             #[cfg(target_arch = "wasm32")]
             let result = {
                 let _ = target;
-                crate::editing::download(&filename, &pdf)
+                batch.queue(&filename, &pdf);
+                Ok::<(), String>(())
             };
             match result {
                 Ok(()) => made += 1,
@@ -90,12 +93,16 @@ impl EasyPdfApp {
             if let Some(dir) = &dir {
                 self.notify_fmt("Wrote {n} files to {dir}", &[("n", &made.to_string()), ("dir", &dir.display().to_string())]);
             }
-            #[cfg(target_arch = "wasm32")]
-            self.notify(crate::i18n::trn(crate::i18n::current(), made as u64, "Downloaded {n} PDF", "Downloaded {n} PDFs"));
+            // In a browser the PDFs are queued for the destination prompt. Each prompt reports
+            // its own outcome, including cancellation; a queued file is not a download yet.
         }
-        if !refused.is_empty() {
-            self.notify(crate::i18n::fmt(tl!("Left out: {names}"), &[("names", &refused.join(", "))]));
+        let omitted = (!refused.is_empty()).then(|| crate::i18n::fmt(tl!("Left out: {names}"), &[("names", &refused.join(", "))]));
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(omitted) = omitted {
+            self.notify(omitted);
         }
+        #[cfg(target_arch = "wasm32")]
+        batch.finish(self, omitted);
     }
 
     /// Convert the picked files, join them in the order picked, and open the result in the page

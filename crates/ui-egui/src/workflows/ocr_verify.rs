@@ -2043,17 +2043,24 @@ fn save_editable(app: &mut EasyPdfApp, bytes: Arc<Vec<u8>>, name: String, doc: O
     #[cfg(target_arch = "wasm32")]
     {
         let _ = (&source, doc, is_source);
-        let saved = crate::editing::download(&name, &bytes);
-        with_state(app, |v, _| {
-            if saved.is_ok() {
-                v.finish();
-            } else {
-                v.phase = Phase::ReviewReady;
+        crate::editing::download_then(&name.clone(), &bytes, move |app, outcome| {
+            let picked = matches!(outcome, Ok(crate::editing::WebSaveOutcome::Picked));
+            with_state(app, |v, _| {
+                if picked {
+                    v.finish();
+                } else {
+                    v.phase = Phase::ReviewReady;
+                }
+            });
+            match outcome {
+                Ok(crate::editing::WebSaveOutcome::Picked) => app.notify_fmt("Saved {name}", &[("name", &name)]),
+                Ok(crate::editing::WebSaveOutcome::DownloadedFallback) => {
+                    app.notify_fmt("Download started: {name}", &[("name", &name)]);
+                }
+                Ok(crate::editing::WebSaveOutcome::Cancelled) => app.notify_tr("Cancelled"),
+                Err(e) => app.notify_fmt("Couldn't save {name}: {e}", &[("name", &name), ("e", &e)]),
             }
         });
-        if let Err(e) = saved {
-            app.notify_error(e);
-        }
     }
 }
 
