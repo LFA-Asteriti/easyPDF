@@ -620,6 +620,18 @@ mod batch_state_tests {
         state.finished = true;
         assert!(state.ready());
     }
+
+    #[test]
+    fn keeps_batch_detail_and_first_write_error_until_the_summary() {
+        let state = WebBatchState {
+            detail: Some("2 pages processed".to_string()),
+            first_error: Some("page-2.png: permission denied".to_string()),
+            ..Default::default()
+        };
+
+        assert_eq!(state.detail.as_deref(), Some("2 pages processed"));
+        assert_eq!(state.first_error.as_deref(), Some("page-2.png: permission denied"));
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
