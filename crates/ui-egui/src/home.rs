@@ -389,11 +389,17 @@ pub fn show(app: &mut EasyPdfApp, ui: &mut egui::Ui) {
                     theme::regular(12.0),
                     t.text_muted,
                 );
-                // The name and path stop short of the page count; hovering shows the whole path.
+                // Browser-local files have no reusable path. Do not expose their opaque recent
+                // identity as if it were a filesystem location.
                 let width = detail.left() - 16.0 - (body.left() + 46.0);
-                widgets::row_text(ui, body.min + vec2(46.0, 15.0), r.name.as_str(), theme::medium(13.5), t.text, width);
-                widgets::row_text(ui, body.min + vec2(46.0, 32.0), r.path.as_str(), theme::regular(11.0), t.text_faint, width);
-                if theme::hand(resp).on_hover_text(&r.path).clicked() {
+                let browser_local = crate::app::is_browser_recent_path(&r.path);
+                let name_y = if browser_local { 24.0 } else { 15.0 };
+                widgets::row_text(ui, body.min + vec2(46.0, name_y), r.name.as_str(), theme::medium(13.5), t.text, width);
+                if !browser_local {
+                    widgets::row_text(ui, body.min + vec2(46.0, 32.0), r.path.as_str(), theme::regular(11.0), t.text_faint, width);
+                }
+                let hover = if browser_local { r.name.as_str() } else { r.path.as_str() };
+                if theme::hand(resp).on_hover_text(hover).clicked() {
                     open = Some(r.path.clone());
                 }
             }

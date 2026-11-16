@@ -7,9 +7,18 @@ pub(crate) fn same_file(a: &str, b: &str) -> bool {
     a == b || matches!((std::path::absolute(a), std::path::absolute(b)), (Ok(x), Ok(y)) if x == y)
 }
 
+const BROWSER_RECENT_PREFIX: &str = "browser://local/";
+
+pub(crate) fn is_browser_recent_path(path: &str) -> bool {
+    path.starts_with(BROWSER_RECENT_PREFIX)
+}
+
 #[cfg(any(test, target_arch = "wasm32"))]
-fn browser_recent_path(name: &str) -> String {
-    format!("browser://local/{name}")
+fn browser_recent_path(name: &str, bytes: &[u8]) -> String {
+    // Stable, dependency-free FNV-1a fingerprint. Browsers do not reveal a local path, so the
+    // content distinguishes two different PDFs that happen to have the same visible name.
+    let fingerprint = bytes.iter().fold(0xcbf29ce484222325_u64, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3));
+    format!("{BROWSER_RECENT_PREFIX}{fingerprint:016x}/{name}")
 }
 
 impl EasyPdfApp {
@@ -278,6 +287,8 @@ impl EasyPdfApp {
         self.session.set_reading_colors(id, self.reading_colors);
         let doc = self.session.get(id).ok_or("the document could not be opened")?;
         let pages = doc.info.pages.len();
+        #[cfg(target_arch = "wasm32")]
+        let browser_path = path.is_none().then(|| browser_recent_path(name, &doc.bytes));
         // Acrobat opens straight to the Comments panel when a document has comments.
         // Read mode opens with the panes closed; the rail still opens them (#932). A right panel
         // the user closed stays closed (#1590).
@@ -338,7 +349,7 @@ impl EasyPdfApp {
         // so opening a document is still visible in Recent after its tab closes. The key is
         // metadata only: the PDF bytes remain in memory and are never persisted or uploaded.
         #[cfg(target_arch = "wasm32")]
-        let path = path.or_else(|| Some(browser_recent_path(name)));
+        let path = path.or(browser_path);
         if let Some(p) = path {
             #[cfg(target_os = "macos")]
             macos_association::repair(std::path::Path::new(&p));
@@ -561,7 +572,40 @@ impl EasyPdfApp {
             self.open_path(path);
         }
         #[cfg(target_arch = "wasm32")]
-        let _ = path;
+        if is_browser_recent_path(path) {
+            let Some(recent) = self.recent.iter().find(|recent| recent.path == path) else {
+                return;
+            };
+            let expected_path = recent.path.clone();
+            let expected_name = recent.name.clone();
+            let inbox = self.inbox.clone();
+            let failed = self.failed_inbox.clone();
+            let ctx = self.ctx.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let picked = rfd::AsyncFileDialog::new().add_filter_any_case("PDF", &["pdf"]).pick_file().await;
+                match picked {
+                    Some(handle) => {
+                        let name = handle.file_name();
+                        let bytes = handle.read().await;
+                        if name == expected_name && browser_recent_path(&name, &bytes) == expected_path {
+                            if let Ok(mut queue) = inbox.lock() {
+                                queue.push((name, bytes));
+                            }
+                        } else if let Ok(mut queue) = failed.lock() {
+                            queue.push((expected_name, tl!("The selected file does not match this recent document").to_string()));
+                        }
+                    }
+                    None => {
+                        if let Ok(mut queue) = failed.lock() {
+                            queue.push((expected_name, tl!("Cancelled").to_string()));
+                        }
+                    }
+                }
+                if let Some(ctx) = ctx {
+                    ctx.request_repaint();
+                }
+            });
+        }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -796,10 +840,16 @@ impl EasyPdfApp {
 
 #[cfg(test)]
 mod recent_tests {
-    use super::browser_recent_path;
+    use super::{browser_recent_path, is_browser_recent_path};
 
     #[test]
-    fn browser_recent_key_keeps_the_visible_file_name() {
-        assert_eq!(browser_recent_path("contratto firmato.pdf"), "browser://local/contratto firmato.pdf");
+    fn browser_recent_key_keeps_name_and_distinguishes_same_named_files() {
+        let first = browser_recent_path("contratto firmato.pdf", b"first PDF");
+        let same = browser_recent_path("contratto firmato.pdf", b"first PDF");
+        let other = browser_recent_path("contratto firmato.pdf", b"second PDF");
+        assert_eq!(first, same);
+        assert_ne!(first, other);
+        assert!(first.ends_with("/contratto firmato.pdf"));
+        assert!(is_browser_recent_path(&first));
     }
 }

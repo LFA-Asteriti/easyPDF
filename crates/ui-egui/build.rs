@@ -160,6 +160,7 @@ const IT_EASYPDF_TRANSLATIONS: &[(&str, &str)] = &[
     ),
     ("OpenRouter. Create key. Paste key. Load models. Choose model.", "OpenRouter. Crea chiave. Incolla chiave. Recupera modelli. Scegli modello."),
     ("No files were produced", "Nessun file prodotto"),
+    ("The selected file does not match this recent document", "Il file selezionato non corrisponde a questo documento recente"),
     ("Organization AI", "AI dell'organizzazione"),
     ("Organization data and cover kits will be deleted.", "I dati dell'organizzazione e i kit cover verranno eliminati."),
     ("Organization name", "Nome organizzazione"),

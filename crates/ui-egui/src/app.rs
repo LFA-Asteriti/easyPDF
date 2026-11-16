@@ -19,6 +19,7 @@ mod prefs;
 mod window;
 
 pub(crate) use clipboard::{copy_refused, print_refused};
+pub(crate) use files::is_browser_recent_path;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use files::same_file;
 use frame::migrate_panel_state;
