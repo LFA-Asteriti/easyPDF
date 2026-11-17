@@ -81,6 +81,8 @@ use theme::{ThemeKind, ThemePreference};
 pub use workflows::ocr_verify::{OcrVerify, Phase};
 
 mod app;
+#[cfg(target_arch = "wasm32")]
+pub use app::{clear_browser_recent_scope, prune_browser_recent_scopes};
 mod hooks;
 mod persist;
 mod platform;
@@ -116,6 +118,8 @@ use dialogs::protect;
 use dialogs::standards_ui;
 use dialogs::word_count_ui;
 pub use home::folders_ui;
+#[cfg(target_arch = "wasm32")]
+pub use hooks::BrowserRecentInbox;
 pub use hooks::{FailedInbox, HostDirtyFn, HostSaveFn, Inbox, OsEvent, OsEventsFn};
 use menus::tab_context;
 use panels::all_tools_ui;
@@ -397,6 +401,11 @@ pub struct EasyPdfApp {
     pub connected_command: Option<connected::CommandFn>,
     pub connected_events: connected::EventQueue,
     pub web_logout: Option<Box<dyn FnMut()>>,
+    storage_key: String,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) browser_recent_scope: String,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) browser_recent_events: std::sync::Arc<std::sync::Mutex<Vec<app::BrowserRecentCacheEvent>>>,
     #[cfg(target_arch = "wasm32")]
     pub(crate) pending_web_saves: Vec<editing::PendingWebSave>,
     #[cfg(target_arch = "wasm32")]
@@ -487,6 +496,12 @@ pub struct EasyPdfApp {
     pub full_screen: bool,
     /// Files delivered asynchronously (web drag-and-drop, web file picker).
     pub inbox: Inbox,
+    /// Files explicitly picked or dropped by this browser user; unlike remote/shared opens,
+    /// these may be retained for automatic Recent reopening.
+    #[cfg(target_arch = "wasm32")]
+    pub browser_local_inbox: Inbox,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) browser_recent_inbox: BrowserRecentInbox,
     /// The browser's startup `?file=` download. Unlike a deliberate Open or drop, a late
     /// arrival opens in the background once the user has started working (#171).
     pub startup_inbox: Inbox,

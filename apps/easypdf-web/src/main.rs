@@ -14,6 +14,21 @@ fn main() {
         // simply receives no remote preference and keeps eframe's browser storage.
         let remote_preferences = fetch_tool_preferences().await.ok();
         let remote_connected = fetch_connected_snapshot().await.ok();
+        let user_id = remote_connected.as_ref().map(|snapshot| snapshot.account.id).or_else(|| remote_preferences.as_ref().map(|value| value.4));
+        // Only an authenticated identity may select and prune an account scope. A temporary
+        // failure of both portal APIs is not proof of logout: deleting every scope here would
+        // lose otherwise valid Recent files and preferences. Explicit logout remains the only
+        // path that intentionally removes all easyPDF browser state.
+        if let Some(id) = user_id {
+            let account_scope = format!("user-{id}");
+            if let Err(error) = easypdf_ui_egui::prune_browser_recent_scopes(Some(&account_scope)).await {
+                eframe::web_sys::console::warn_1(&format!("easyPDF: could not remove another account's Recent cache: {error}").into());
+            }
+            let storage_key = format!("easypdf-user-{id}");
+            if let Err(error) = prune_browser_account_storage(Some(&storage_key)) {
+                eframe::web_sys::console::warn_1(&format!("easyPDF: could not remove another account's settings: {error}").into());
+            }
+        }
         let Some(canvas) = web_sys::window()
             .and_then(|w| w.document())
             .and_then(|d| d.get_element_by_id("easypdf"))
@@ -29,13 +44,12 @@ fn main() {
                 options,
                 Box::new(move |cc| {
                     let mut app = EasyPdfApp::new();
+                    let (storage_key, recent_scope) = app.configure_web_account(user_id);
                     // "printcraft": settings saved under the app's former name, PrintCraft.
-                    if let Some(json) =
-                        cc.storage.and_then(|s| s.get_string("easypdf").or_else(|| s.get_string("easypdf")).or_else(|| s.get_string("printcraft")))
-                    {
+                    if let Some(json) = cc.storage.and_then(|storage| storage.get_string(&storage_key)) {
                         app.restore(&json);
                     }
-                    if let Some((order, recommended, menu_order, csrf)) = remote_preferences.clone() {
+                    if let Some((order, recommended, menu_order, csrf, _)) = remote_preferences.clone() {
                         let value = serde_json::json!({
                             "tool_order": order,
                             "recommended_tools": recommended,
@@ -70,10 +84,14 @@ fn main() {
                             });
                         }));
                         let logout_csrf = csrf.clone();
+                        let logout_storage_key = storage_key.clone();
+                        let logout_recent_scope = recent_scope.clone();
                         app.web_logout = Some(Box::new(move || {
                             let csrf = logout_csrf.clone();
+                            let storage_key = logout_storage_key.clone();
+                            let recent_scope = logout_recent_scope.clone();
                             wasm_bindgen_futures::spawn_local(async move {
-                                if let Err(error) = logout(&csrf).await {
+                                if let Err(error) = logout(&csrf, &storage_key, &recent_scope).await {
                                     eframe::web_sys::console::error_1(&format!("easyPDF: logout failed: {error}").into());
                                 }
                             });
@@ -161,8 +179,15 @@ fn main() {
 }
 
 #[cfg(target_arch = "wasm32")]
-async fn logout(csrf: &str) -> Result<(), String> {
+async fn logout(csrf: &str, storage_key: &str, recent_scope: &str) -> Result<(), String> {
     use eframe::wasm_bindgen::{JsCast, JsValue};
+    let window = web_sys::window().ok_or("no window")?;
+    let _ = easypdf_ui_egui::clear_browser_recent_scope(recent_scope).await;
+    let _ = easypdf_ui_egui::prune_browser_recent_scopes(None).await;
+    if let Some(storage) = window.local_storage().map_err(|error| format!("{error:?}"))? {
+        let _ = storage.remove_item(storage_key);
+        let _ = prune_storage(&storage, None);
+    }
     let options = web_sys::RequestInit::new();
     options.set_method("POST");
     options.set_mode(web_sys::RequestMode::SameOrigin);
@@ -170,17 +195,52 @@ async fn logout(csrf: &str) -> Result<(), String> {
     options.set_body(&JsValue::from_str(&format!("csrf={encoded}")));
     let request = web_sys::Request::new_with_str_and_init("/?action=logout", &options).map_err(|error| format!("{error:?}"))?;
     request.headers().set("Content-Type", "application/x-www-form-urlencoded").map_err(|error| format!("{error:?}"))?;
-    let window = web_sys::window().ok_or("no window")?;
     let value = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request)).await.map_err(|error| format!("{error:?}"))?;
     let response: web_sys::Response = value.dyn_into().map_err(|_| "not a response")?;
     if !response.ok() {
         return Err(format!("HTTP {}", response.status()));
     }
-    window.location().set_href("/").map_err(|error| format!("{error:?}"))
+    // eframe may persist one final frame while the asynchronous logout request is
+    // in flight. Remove account-scoped state again immediately before leaving the
+    // editor so that it cannot recreate the key cleared above.
+    if let Some(storage) = window.local_storage().map_err(|error| format!("{error:?}"))? {
+        let _ = storage.remove_item(storage_key);
+        let _ = prune_storage(&storage, None);
+    }
+    // Leave the WebAssembly editor before the final cleanup. eframe persists a
+    // last frame during page unload and could otherwise recreate the account key.
+    // The same-origin cleanup page removes it after the editor is gone, then
+    // redirects to the public home (and reports any failure there).
+    let destination = "/logout-cleanup.php";
+    window.location().set_href(destination).map_err(|error| format!("{error:?}"))
 }
 
 #[cfg(target_arch = "wasm32")]
-async fn fetch_tool_preferences() -> Result<(Option<Vec<String>>, Option<Vec<String>>, Option<Vec<String>>, String), String> {
+fn prune_browser_account_storage(current_key: Option<&str>) -> Result<(), String> {
+    let window = web_sys::window().ok_or("no window")?;
+    if let Some(storage) = window.local_storage().map_err(|error| format!("{error:?}"))? {
+        prune_storage(&storage, current_key)?;
+    }
+    Ok(())
+}
+
+#[cfg(target_arch = "wasm32")]
+fn prune_storage(storage: &web_sys::Storage, current_key: Option<&str>) -> Result<(), String> {
+    let mut remove = Vec::new();
+    for index in 0..storage.length().map_err(|error| format!("{error:?}"))? {
+        let Some(key) = storage.key(index).map_err(|error| format!("{error:?}"))? else { continue };
+        if (key.starts_with("easypdf-user-") || key.starts_with("easypdf-session-")) && current_key != Some(key.as_str()) {
+            remove.push(key);
+        }
+    }
+    for key in remove {
+        storage.remove_item(&key).map_err(|error| format!("{error:?}"))?;
+    }
+    Ok(())
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn fetch_tool_preferences() -> Result<(Option<Vec<String>>, Option<Vec<String>>, Option<Vec<String>>, String, u64), String> {
     use eframe::wasm_bindgen::JsCast;
     let window = web_sys::window().ok_or("no window")?;
     let value = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str("/preferences.php")).await.map_err(|e| format!("{e:?}"))?;
@@ -194,6 +254,7 @@ async fn fetch_tool_preferences() -> Result<(Option<Vec<String>>, Option<Vec<Str
         .as_string()
         .ok_or("preferences response was not text")?;
     let value: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    let user_id = value.get("user_id").and_then(serde_json::Value::as_u64).ok_or("preferences response has no user ID")?;
     let csrf = value.get("csrf").and_then(serde_json::Value::as_str).ok_or("preferences response has no CSRF token")?.to_string();
     let order = value
         .get("tool_order")
@@ -210,7 +271,7 @@ async fn fetch_tool_preferences() -> Result<(Option<Vec<String>>, Option<Vec<Str
         .filter(|value| !value.is_null())
         .map(|value| serde_json::from_value::<Vec<String>>(value.clone()).map_err(|e| e.to_string()))
         .transpose()?;
-    Ok((order, recommended, menu_order, csrf))
+    Ok((order, recommended, menu_order, csrf, user_id))
 }
 
 #[cfg(target_arch = "wasm32")]

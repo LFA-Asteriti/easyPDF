@@ -1,5 +1,7 @@
 /// Files delivered asynchronously: (name, bytes).
 pub type Inbox = std::sync::Arc<std::sync::Mutex<Vec<(String, Vec<u8>)>>>;
+#[cfg(target_arch = "wasm32")]
+pub type BrowserRecentInbox = std::sync::Arc<std::sync::Mutex<Vec<(String, String, Vec<u8>)>>>;
 
 /// Files that failed to arrive asynchronously (a browser `?file=` URL that couldn't be fetched):
 /// `(name, error)`, reported to the user on the next frame (#173).

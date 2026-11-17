@@ -349,6 +349,7 @@ pub fn show(app: &mut EasyPdfApp, ui: &mut egui::Ui) {
             let mut remove = None;
             for r in app.recent.iter().take(app.recent_limit) {
                 let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 46.0), Sense::click());
+                let mut removing = false;
                 resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &r.name));
                 let press = theme::Press::track(ui, &resp);
                 // The row, not its response: the pointer stays "in" the row over its remove button.
@@ -370,6 +371,10 @@ pub fn show(app: &mut EasyPdfApp, ui: &mut egui::Ui) {
                     }
                     icons::paint(ui, x_rect.shrink(6.0), "x", 16.0, t.icon);
                     if x.on_hover_text(tl!("Remove from Recent")).clicked() {
+                        // The remove control overlaps the clickable row. Do not also reopen the
+                        // document while removing it: a completed browser-cache load would add
+                        // the entry to Recent again after `remove_recent` persisted the deletion.
+                        removing = true;
                         remove = Some(r.path.clone());
                     }
                 }
@@ -399,7 +404,7 @@ pub fn show(app: &mut EasyPdfApp, ui: &mut egui::Ui) {
                     widgets::row_text(ui, body.min + vec2(46.0, 32.0), r.path.as_str(), theme::regular(11.0), t.text_faint, width);
                 }
                 let hover = if browser_local { r.name.as_str() } else { r.path.as_str() };
-                if theme::hand(resp).on_hover_text(hover).clicked() {
+                if !removing && theme::hand(resp).on_hover_text(hover).clicked() {
                     open = Some(r.path.clone());
                 }
             }
@@ -407,7 +412,7 @@ pub fn show(app: &mut EasyPdfApp, ui: &mut egui::Ui) {
                 app.open_recent(&p);
             }
             if let Some(p) = remove {
-                app.recent.retain(|r| r.path != p);
+                app.remove_recent(&p);
             }
             if clear {
                 app.execute("file.clear_recent");

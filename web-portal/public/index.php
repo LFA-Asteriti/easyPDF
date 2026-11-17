@@ -22,7 +22,7 @@ try {
             if ($user !== null) audit((int) $user['id'], 'logout');
             $_SESSION = [];
             session_regenerate_id(true);
-            header('Location: /'); exit;
+            header('Location: /logout-cleanup.php'); exit;
         }
         if ($action === 'login') {
             $email = mb_strtolower(trim((string) ($_POST['email'] ?? '')));
@@ -109,6 +109,9 @@ $showTopbar = $user === null || is_account_admin($user);
 $page = (string) ($_GET['page'] ?? 'home');
 if (!in_array($page, ['home', 'login', 'register', 'forgot', 'reset'], true)) $page = 'home';
 $flashes = take_flashes();
+if (($_GET['logout_cleanup'] ?? '') === 'failed') {
+    $flashes[] = ['type' => 'error', 'message' => 'Logout completato, ma il browser non ha potuto eliminare tutte le copie locali. Cancella i dati del sito prima di usare un altro account.'];
+}
 $resetToken = $page === 'reset' ? (string) ($_GET['token'] ?? '') : '';
 $developmentResetLink = isset($_SESSION['development_reset_link']) ? (string) $_SESSION['development_reset_link'] : null;
 unset($_SESSION['development_reset_link']);

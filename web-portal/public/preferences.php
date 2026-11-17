@@ -35,6 +35,7 @@ try {
         $stmt->execute([$userId]);
         $saved = $stmt->fetch();
         echo json_encode([
+            'user_id' => $userId,
             'csrf' => csrf_token(),
             'tool_order' => is_array($saved) && is_string($saved['tool_order_json'] ?? null)
                 ? json_decode($saved['tool_order_json'], true, 32, JSON_THROW_ON_ERROR)

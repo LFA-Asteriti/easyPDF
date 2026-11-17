@@ -193,7 +193,7 @@ impl EasyPdfApp {
                 let max = crate::RECENT_FILES_MAX;
                 let limit = value.parse().ok().filter(|n| *n <= max).ok_or_else(|| format!("recent-files must be between 0 and {max}"))?;
                 self.recent_limit = limit;
-                self.recent.truncate(limit);
+                self.trim_recent();
             }
             ("cover", Some(v)) => {
                 let on = match value {

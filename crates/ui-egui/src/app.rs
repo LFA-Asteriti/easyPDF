@@ -19,9 +19,13 @@ mod prefs;
 mod window;
 
 pub(crate) use clipboard::{copy_refused, print_refused};
+#[cfg(target_arch = "wasm32")]
+pub(crate) use files::BrowserRecentCacheEvent;
 pub(crate) use files::is_browser_recent_path;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) use files::same_file;
+#[cfg(target_arch = "wasm32")]
+pub use files::{clear_browser_recent_scope, prune_browser_recent_scopes};
 use frame::migrate_panel_state;
 pub(crate) use prefs::{MAX_AUTHOR_CHARS, date_text_for_pdf};
 
@@ -144,6 +148,11 @@ impl EasyPdfApp {
             connected_command: None,
             connected_events: Default::default(),
             web_logout: None,
+            storage_key: "easypdf".into(),
+            #[cfg(target_arch = "wasm32")]
+            browser_recent_scope: "standalone".into(),
+            #[cfg(target_arch = "wasm32")]
+            browser_recent_events: Default::default(),
             all_tools_full: false,
             all_tools_query: String::new(),
             all_tools_tab: (None, false),
@@ -190,6 +199,10 @@ impl EasyPdfApp {
             unlock_prompt: None,
             full_screen: false,
             inbox: Default::default(),
+            #[cfg(target_arch = "wasm32")]
+            browser_local_inbox: Default::default(),
+            #[cfg(target_arch = "wasm32")]
+            browser_recent_inbox: Default::default(),
             startup_inbox: Default::default(),
             startup_superseded: false,
             failed_inbox: Default::default(),
@@ -341,6 +354,15 @@ impl EasyPdfApp {
 
     /// Fields are being edited (Prepare a form or its Calculation order is open, or a field tool
     /// is picked), unless the form is being previewed.
+    #[cfg(target_arch = "wasm32")]
+    pub fn configure_web_account(&mut self, user_id: Option<u64>) -> (String, String) {
+        let suffix = user_id
+            .map_or_else(|| format!("session-{:.0}-{:016x}", js_sys::Date::now(), js_sys::Math::random().to_bits()), |id| format!("user-{id}"));
+        self.storage_key = format!("easypdf-{suffix}");
+        self.browser_recent_scope = suffix;
+        (self.storage_key.clone(), self.browser_recent_scope.clone())
+    }
+
     pub fn is_preparing(&self) -> bool {
         ((self.left_open && matches!(self.left, LeftPanel::Tool("form") | LeftPanel::CalculationOrder))
             || matches!(self.quick_tool, QuickTool::Field(_)))
@@ -473,7 +495,7 @@ impl eframe::App for EasyPdfApp {
             let minimized = self.ctx.as_ref().is_some_and(|c| c.input(|i| i.viewport().minimized == Some(true)));
             self.window_state.keep(storage, minimized);
         }
-        storage.set_string("easypdf", self.persist());
+        storage.set_string(&self.storage_key, self.persist());
     }
 
     /// Each frame's work before drawing: opens, operating-system and control-channel requests,
@@ -482,6 +504,8 @@ impl eframe::App for EasyPdfApp {
         self.ctx = Some(ctx.clone());
         #[cfg(target_arch = "wasm32")]
         self.poll_web_saves();
+        #[cfg(target_arch = "wasm32")]
+        self.poll_browser_recent_cache();
         self.poll_connected_events();
         self.poll_connected_background(ctx);
         #[cfg(not(target_arch = "wasm32"))]
@@ -546,6 +570,23 @@ impl eframe::App for EasyPdfApp {
                 self.drop_into_combine(f, ctx);
             } else {
                 self.open_dropped(f, ctx);
+            }
+        }
+        #[cfg(target_arch = "wasm32")]
+        let local: Vec<(String, Vec<u8>)> = self.browser_local_inbox.lock().map(|mut q| std::mem::take(&mut *q)).unwrap_or_default();
+        #[cfg(target_arch = "wasm32")]
+        for (name, bytes) in local {
+            if let Err(error) = self.open_browser_local_bytes(&name, bytes) {
+                self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &error)]);
+            }
+        }
+        #[cfg(target_arch = "wasm32")]
+        let recent: Vec<(String, String, Vec<u8>)> =
+            self.browser_recent_inbox.lock().map(|mut queue| std::mem::take(&mut *queue)).unwrap_or_default();
+        #[cfg(target_arch = "wasm32")]
+        for (path, name, bytes) in recent {
+            if let Err(error) = self.open_bytes(&name, Some(path), bytes) {
+                self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &error)]);
             }
         }
         let arrived: Vec<(String, Vec<u8>)> = self.inbox.lock().map(|mut q| std::mem::take(&mut *q)).unwrap_or_default();

@@ -9,19 +9,197 @@ pub(crate) fn same_file(a: &str, b: &str) -> bool {
 
 const BROWSER_RECENT_PREFIX: &str = "browser://local/";
 
+#[cfg(target_arch = "wasm32")]
+const MAX_BROWSER_RECENT_BYTES: usize = 128 * 1024 * 1024;
+#[cfg(target_arch = "wasm32")]
+const MAX_BROWSER_RECENT_TOTAL_BYTES: usize = 256 * 1024 * 1024;
+
 pub(crate) fn is_browser_recent_path(path: &str) -> bool {
     path.starts_with(BROWSER_RECENT_PREFIX)
 }
 
 #[cfg(any(test, target_arch = "wasm32"))]
 fn browser_recent_path(name: &str, bytes: &[u8]) -> String {
-    // Stable, dependency-free FNV-1a fingerprint. Browsers do not reveal a local path, so the
-    // content distinguishes two different PDFs that happen to have the same visible name.
-    let fingerprint = bytes.iter().fold(0xcbf29ce484222325_u64, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3));
-    format!("{BROWSER_RECENT_PREFIX}{fingerprint:016x}/{name}")
+    // Browsers do not reveal a local path. A cryptographic content identity distinguishes two
+    // different PDFs with the same visible name and is also the key of the origin-local cache.
+    let digest = easypdf_engine::sign::keys::DigestAlg::Sha256.digest(&[bytes]);
+    let fingerprint = digest.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+    format!("{BROWSER_RECENT_PREFIX}{fingerprint}/{name}")
+}
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone)]
+pub(crate) enum BrowserRecentCacheEvent {
+    Stored { path: String, name: String },
+    StoreFailed { path: String, name: String },
+    LoadFailed { path: String, name: String, error: String },
+    DeleteFailed { name: String },
+}
+
+#[cfg(target_arch = "wasm32")]
+fn browser_recent_cache_name(scope: &str) -> String {
+    format!("easypdf-recent-{scope}")
+}
+
+#[cfg(target_arch = "wasm32")]
+fn browser_recent_request(path: &str) -> Result<String, String> {
+    let encoded = js_sys::encode_uri_component(path).as_string().ok_or("could not encode the recent document key")?;
+    Ok(format!("/__easypdf_recent/{encoded}"))
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn browser_recent_cache(scope: &str) -> Result<web_sys::Cache, String> {
+    use wasm_bindgen::JsCast as _;
+    let window = web_sys::window().ok_or("no browser window")?;
+    let caches = window.caches().map_err(|error| format!("{error:?}"))?;
+    let value = wasm_bindgen_futures::JsFuture::from(caches.open(&browser_recent_cache_name(scope))).await.map_err(|error| format!("{error:?}"))?;
+    value.dyn_into::<web_sys::Cache>().map_err(|_| "browser cache did not open".to_string())
+}
+
+#[cfg(target_arch = "wasm32")]
+fn schedule_store_browser_recent(
+    scope: String,
+    path: String,
+    name: String,
+    response: web_sys::Response,
+    events: std::sync::Arc<std::sync::Mutex<Vec<BrowserRecentCacheEvent>>>,
+    ctx: Option<egui::Context>,
+) {
+    wasm_bindgen_futures::spawn_local(async move {
+        let result = async {
+            let cache = browser_recent_cache(&scope).await?;
+            let request = browser_recent_request(&path)?;
+            wasm_bindgen_futures::JsFuture::from(cache.put_with_str(&request, &response)).await.map_err(|error| format!("{error:?}"))?;
+            Ok::<(), String>(())
+        }
+        .await;
+        if let Ok(mut queue) = events.lock() {
+            queue.push(if result.is_ok() {
+                BrowserRecentCacheEvent::Stored { path, name }
+            } else {
+                BrowserRecentCacheEvent::StoreFailed { path, name }
+            });
+        }
+        if let Some(ctx) = ctx {
+            ctx.request_repaint();
+        }
+    });
+}
+
+#[cfg(target_arch = "wasm32")]
+fn forget_browser_recent(
+    scope: String,
+    path: String,
+    name: String,
+    events: std::sync::Arc<std::sync::Mutex<Vec<BrowserRecentCacheEvent>>>,
+    ctx: Option<egui::Context>,
+) {
+    wasm_bindgen_futures::spawn_local(async move {
+        let result = async {
+            let cache = browser_recent_cache(&scope).await?;
+            let request = browser_recent_request(&path)?;
+            wasm_bindgen_futures::JsFuture::from(cache.delete_with_str(&request)).await.map_err(|error| format!("{error:?}"))?;
+            Ok::<(), String>(())
+        }
+        .await;
+        if result.is_err()
+            && let Ok(mut queue) = events.lock()
+        {
+            queue.push(BrowserRecentCacheEvent::DeleteFailed { name });
+        }
+        if let Some(ctx) = ctx {
+            ctx.request_repaint();
+        }
+    });
+}
+
+#[cfg(target_arch = "wasm32")]
+fn load_browser_recent(
+    scope: String,
+    path: String,
+    name: String,
+    inbox: BrowserRecentInbox,
+    events: std::sync::Arc<std::sync::Mutex<Vec<BrowserRecentCacheEvent>>>,
+    ctx: Option<egui::Context>,
+) {
+    wasm_bindgen_futures::spawn_local(async move {
+        let result = async {
+            use wasm_bindgen::JsCast as _;
+            let cache = browser_recent_cache(&scope).await?;
+            let request = browser_recent_request(&path)?;
+            let value = wasm_bindgen_futures::JsFuture::from(cache.match_with_str(&request)).await.map_err(|error| format!("{error:?}"))?;
+            if value.is_undefined() {
+                return Err(tl!("The local browser copy is no longer available").to_string());
+            }
+            let response = value.dyn_into::<web_sys::Response>().map_err(|_| "browser cache returned an invalid response".to_string())?;
+            let buffer = wasm_bindgen_futures::JsFuture::from(response.array_buffer().map_err(|error| format!("{error:?}"))?)
+                .await
+                .map_err(|error| format!("{error:?}"))?;
+            Ok::<Vec<u8>, String>(js_sys::Uint8Array::new(&buffer).to_vec())
+        }
+        .await;
+        match result {
+            Ok(bytes) => {
+                if let Ok(mut queue) = inbox.lock() {
+                    queue.push((path, name, bytes));
+                }
+            }
+            Err(error) => {
+                if let Ok(mut queue) = events.lock() {
+                    queue.push(BrowserRecentCacheEvent::LoadFailed { path, name, error });
+                }
+            }
+        }
+        if let Some(ctx) = ctx {
+            ctx.request_repaint();
+        }
+    });
+}
+
+#[cfg(target_arch = "wasm32")]
+pub async fn clear_browser_recent_scope(scope: &str) -> Result<(), String> {
+    let window = web_sys::window().ok_or("no browser window")?;
+    let caches = window.caches().map_err(|error| format!("{error:?}"))?;
+    wasm_bindgen_futures::JsFuture::from(caches.delete(&browser_recent_cache_name(scope))).await.map_err(|error| format!("{error:?}"))?;
+    Ok(())
+}
+
+/// Remove browser-local Recent caches that do not belong to the authenticated account.
+/// Passing `None` removes every easyPDF Recent cache during an explicit logout or cleanup.
+#[cfg(target_arch = "wasm32")]
+pub async fn prune_browser_recent_scopes(current_scope: Option<&str>) -> Result<(), String> {
+    let window = web_sys::window().ok_or("no browser window")?;
+    let caches = window.caches().map_err(|error| format!("{error:?}"))?;
+    let value = wasm_bindgen_futures::JsFuture::from(caches.keys()).await.map_err(|error| format!("{error:?}"))?;
+    let names = js_sys::Array::from(&value);
+    let keep = current_scope.map(browser_recent_cache_name);
+    for value in names.iter() {
+        let Some(name) = value.as_string() else { continue };
+        if name.starts_with("easypdf-recent-") && keep.as_deref() != Some(name.as_str()) {
+            wasm_bindgen_futures::JsFuture::from(caches.delete(&name)).await.map_err(|error| format!("{error:?}"))?;
+        }
+    }
+    Ok(())
 }
 
 impl EasyPdfApp {
+    /// Persist the browser account state immediately after a Recent-list mutation.
+    ///
+    /// eframe's web auto-save runs periodically. A reload between the user's click and that
+    /// timer would otherwise restore a removed entry even though its CacheStorage body was
+    /// already deleted.
+    #[cfg(target_arch = "wasm32")]
+    fn persist_browser_recent_state(&mut self) {
+        let result = (|| {
+            let window = web_sys::window().ok_or("no browser window")?;
+            let storage = window.local_storage().map_err(|error| format!("{error:?}"))?.ok_or("browser storage is unavailable")?;
+            storage.set_item(&self.storage_key, &self.persist()).map_err(|error| format!("{error:?}"))
+        })();
+        if let Err(error) = result {
+            self.notify_fmt("Couldn't save {name}: {e}", &[("name", tl!("Recent")), ("e", &error)]);
+        }
+    }
+
     /// Open a document the way it asks to be opened: navigation panel, layout, magnification,
     /// page and the place on it (Document Properties ▸ Initial View, `/OpenAction`). With Always
     /// use my default zoom and page layout on, the layout and magnification stay at the defaults
@@ -89,6 +267,38 @@ impl EasyPdfApp {
     pub fn open_bytes(&mut self, name: &str, path: Option<String>, bytes: Vec<u8>) -> Result<(), String> {
         self.startup_superseded = true;
         self.open_bytes_with_focus(name, path, bytes, true)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) fn open_browser_local_bytes(&mut self, name: &str, mut bytes: Vec<u8>) -> Result<(), String> {
+        if self.recent_limit == 0 || bytes.len() > MAX_BROWSER_RECENT_BYTES {
+            if bytes.len() > MAX_BROWSER_RECENT_BYTES {
+                self.notify_tr("This file is too large to keep in browser Recent files");
+            }
+            return self.open_bytes(name, None, bytes);
+        }
+        let path = browser_recent_path(name, &bytes);
+        let response = match web_sys::Response::new_with_opt_u8_array(Some(bytes.as_mut_slice())) {
+            Ok(response) => response,
+            Err(_) => {
+                self.notify_tr("The browser could not keep a local copy for Recent files");
+                return self.open_bytes(name, None, bytes);
+            }
+        };
+        let opened = self.open_bytes(name, Some(path.clone()), bytes);
+        let retained = self.recent.iter().any(|recent| recent.path == path)
+            || self.password_prompt.as_ref().is_some_and(|prompt| prompt.path.as_deref() == Some(path.as_str()));
+        if opened.is_ok() && retained {
+            schedule_store_browser_recent(
+                self.browser_recent_scope.clone(),
+                path,
+                name.to_string(),
+                response,
+                self.browser_recent_events.clone(),
+                self.ctx.clone(),
+            );
+        }
+        opened
     }
 
     pub(super) fn open_bytes_with_focus(&mut self, name: &str, path: Option<String>, bytes: Vec<u8>, activate: bool) -> Result<(), String> {
@@ -287,8 +497,6 @@ impl EasyPdfApp {
         self.session.set_reading_colors(id, self.reading_colors);
         let doc = self.session.get(id).ok_or("the document could not be opened")?;
         let pages = doc.info.pages.len();
-        #[cfg(target_arch = "wasm32")]
-        let browser_path = path.is_none().then(|| browser_recent_path(name, &doc.bytes));
         // Acrobat opens straight to the Comments panel when a document has comments.
         // Read mode opens with the panes closed; the rail still opens them (#932). A right panel
         // the user closed stays closed (#1590).
@@ -345,18 +553,13 @@ impl EasyPdfApp {
             self.select_mode(self.default_mode);
             self.left_open = left_open;
         }
-        // Browsers deliberately hide a picked file's local path. Keep an opaque, local-only key
-        // so opening a document is still visible in Recent after its tab closes. The key is
-        // metadata only: the PDF bytes remain in memory and are never persisted or uploaded.
-        #[cfg(target_arch = "wasm32")]
-        let path = path.or(browser_path);
         if let Some(p) = path {
             #[cfg(target_os = "macos")]
             macos_association::repair(std::path::Path::new(&p));
             self.recent.retain(|r| r.path != p);
             self.recent_check.opened(&p);
             self.recent.insert(0, RecentFile { name: name.to_string(), path: p, pages, size });
-            self.recent.truncate(self.recent_limit);
+            self.trim_recent();
         }
         // What the form's scripts said while it opened (messages, errors) shows now, not with
         // the next edit.
@@ -444,6 +647,16 @@ impl EasyPdfApp {
     pub fn submit_password(&mut self, password: Option<String>) {
         let Some(p) = self.password_prompt.take() else { return };
         let Some(pw) = password else {
+            #[cfg(target_arch = "wasm32")]
+            if let Some(path) = p.path.as_deref().filter(|path| is_browser_recent_path(path)) {
+                forget_browser_recent(
+                    self.browser_recent_scope.clone(),
+                    path.to_string(),
+                    p.name.clone(),
+                    self.browser_recent_events.clone(),
+                    self.ctx.clone(),
+                );
+            }
             // A cancelled recovery goes back on offer; its snapshot stays in the store and must
             // not attach itself to whatever document is unlocked next (#813).
             if let Some(meta) = p.recovered {
@@ -567,6 +780,7 @@ impl EasyPdfApp {
     pub fn open_recent(&mut self, path: &str) {
         if let Some(i) = self.tab_showing(path) {
             self.active = Some(i);
+            return;
         } else {
             #[cfg(not(target_arch = "wasm32"))]
             self.open_path(path);
@@ -576,35 +790,100 @@ impl EasyPdfApp {
             let Some(recent) = self.recent.iter().find(|recent| recent.path == path) else {
                 return;
             };
-            let expected_path = recent.path.clone();
-            let expected_name = recent.name.clone();
-            let inbox = self.inbox.clone();
-            let failed = self.failed_inbox.clone();
-            let ctx = self.ctx.clone();
-            wasm_bindgen_futures::spawn_local(async move {
-                let picked = rfd::AsyncFileDialog::new().add_filter_any_case("PDF", &["pdf"]).pick_file().await;
-                match picked {
-                    Some(handle) => {
-                        let name = handle.file_name();
-                        let bytes = handle.read().await;
-                        if name == expected_name && browser_recent_path(&name, &bytes) == expected_path {
-                            if let Ok(mut queue) = inbox.lock() {
-                                queue.push((name, bytes));
-                            }
-                        } else if let Ok(mut queue) = failed.lock() {
-                            queue.push((expected_name, tl!("The selected file does not match this recent document").to_string()));
-                        }
-                    }
-                    None => {
-                        if let Ok(mut queue) = failed.lock() {
-                            queue.push((expected_name, tl!("Cancelled").to_string()));
-                        }
+            load_browser_recent(
+                self.browser_recent_scope.clone(),
+                recent.path.clone(),
+                recent.name.clone(),
+                self.browser_recent_inbox.clone(),
+                self.browser_recent_events.clone(),
+                self.ctx.clone(),
+            );
+        }
+    }
+
+    pub(crate) fn remove_recent(&mut self, path: &str) {
+        #[cfg(target_arch = "wasm32")]
+        let removed = self.recent.iter().find(|recent| recent.path == path).map(|recent| recent.name.clone());
+        self.recent.retain(|recent| recent.path != path);
+        #[cfg(target_arch = "wasm32")]
+        self.persist_browser_recent_state();
+        #[cfg(target_arch = "wasm32")]
+        if is_browser_recent_path(path)
+            && let Some(name) = removed
+        {
+            forget_browser_recent(self.browser_recent_scope.clone(), path.to_string(), name, self.browser_recent_events.clone(), self.ctx.clone());
+        }
+    }
+
+    pub(crate) fn clear_recent(&mut self) {
+        #[cfg(target_arch = "wasm32")]
+        let paths = self.recent.iter().map(|recent| (recent.path.clone(), recent.name.clone())).collect::<Vec<_>>();
+        self.recent.clear();
+        #[cfg(target_arch = "wasm32")]
+        self.persist_browser_recent_state();
+        #[cfg(target_arch = "wasm32")]
+        for (path, name) in paths {
+            if is_browser_recent_path(&path) {
+                forget_browser_recent(self.browser_recent_scope.clone(), path, name, self.browser_recent_events.clone(), self.ctx.clone());
+            }
+        }
+    }
+
+    pub(crate) fn trim_recent(&mut self) {
+        #[cfg(target_arch = "wasm32")]
+        let mut browser_bytes =
+            self.recent.iter().filter(|recent| is_browser_recent_path(&recent.path)).fold(0usize, |total, recent| total.saturating_add(recent.size));
+        while self.recent.len() > self.recent_limit || {
+            #[cfg(target_arch = "wasm32")]
+            {
+                browser_bytes > MAX_BROWSER_RECENT_TOTAL_BYTES
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                false
+            }
+        } {
+            let Some(recent) = self.recent.pop() else { break };
+            #[cfg(target_arch = "wasm32")]
+            if is_browser_recent_path(&recent.path) {
+                browser_bytes = browser_bytes.saturating_sub(recent.size);
+                forget_browser_recent(
+                    self.browser_recent_scope.clone(),
+                    recent.path,
+                    recent.name,
+                    self.browser_recent_events.clone(),
+                    self.ctx.clone(),
+                );
+            }
+        }
+        #[cfg(target_arch = "wasm32")]
+        self.persist_browser_recent_state();
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) fn poll_browser_recent_cache(&mut self) {
+        let events = self.browser_recent_events.lock().map(|mut queue| std::mem::take(&mut *queue)).unwrap_or_default();
+        for event in events {
+            match event {
+                BrowserRecentCacheEvent::Stored { path, name } => {
+                    if !self.recent.iter().any(|recent| recent.path == path) {
+                        forget_browser_recent(self.browser_recent_scope.clone(), path, name, self.browser_recent_events.clone(), self.ctx.clone());
                     }
                 }
-                if let Some(ctx) = ctx {
-                    ctx.request_repaint();
+                BrowserRecentCacheEvent::StoreFailed { path, name } => {
+                    self.recent.retain(|recent| recent.path != path);
+                    self.persist_browser_recent_state();
+                    self.notify_fmt("The browser could not keep {name} in Recent files", &[("name", &name)]);
                 }
-            });
+                BrowserRecentCacheEvent::LoadFailed { path, name, error } => {
+                    self.recent.retain(|recent| recent.path != path);
+                    self.persist_browser_recent_state();
+                    self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &error)]);
+                }
+                BrowserRecentCacheEvent::DeleteFailed { name } => {
+                    self.notify_fmt("The browser could not delete the local copy of {name}", &[("name", &name)]);
+                }
+            }
         }
     }
 
@@ -778,7 +1057,7 @@ impl EasyPdfApp {
         // Browsers pick files asynchronously; the bytes arrive through `inbox`.
         #[cfg(target_arch = "wasm32")]
         {
-            let inbox = self.inbox.clone();
+            let inbox = self.browser_local_inbox.clone();
             let ctx = self.ctx.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 if let Some(h) = rfd::AsyncFileDialog::new()
@@ -840,7 +1119,7 @@ impl EasyPdfApp {
 
 #[cfg(test)]
 mod recent_tests {
-    use super::{browser_recent_path, is_browser_recent_path};
+    use super::{BROWSER_RECENT_PREFIX, browser_recent_path, is_browser_recent_path};
 
     #[test]
     fn browser_recent_key_keeps_name_and_distinguishes_same_named_files() {
@@ -851,5 +1130,8 @@ mod recent_tests {
         assert_ne!(first, other);
         assert!(first.ends_with("/contratto firmato.pdf"));
         assert!(is_browser_recent_path(&first));
+        let identity = first.strip_prefix(BROWSER_RECENT_PREFIX).and_then(|rest| rest.split('/').next()).unwrap_or_default();
+        assert_eq!(identity.len(), 64);
+        assert!(identity.bytes().all(|byte| byte.is_ascii_hexdigit()));
     }
 }

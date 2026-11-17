@@ -243,7 +243,7 @@ impl EasyPdfApp {
         if let Some(limit) = v["recent_limit"].as_u64() {
             self.recent_limit = usize::try_from(limit).map_or(crate::RECENT_FILES_MAX, |n| n.min(crate::RECENT_FILES_MAX));
         }
-        self.recent.truncate(self.recent_limit);
+        self.trim_recent();
         self.restore_layout_prefs(&v);
         self.restore_behavior_prefs(&v);
         self.restore_view_prefs(&v);

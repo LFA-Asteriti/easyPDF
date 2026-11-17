@@ -127,7 +127,7 @@ impl EasyPdfApp {
     #[cfg(target_arch = "wasm32")]
     pub(super) fn open_dropped(&mut self, f: egui::DroppedFileHandle, ctx: &egui::Context) {
         self.startup_superseded = true;
-        let inbox = self.inbox.clone();
+        let inbox = self.browser_local_inbox.clone();
         let ctx = ctx.clone();
         wasm_bindgen_futures::spawn_local(async move {
             let name = f.path().file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "dropped.pdf".into());
