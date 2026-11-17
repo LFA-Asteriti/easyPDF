@@ -780,24 +780,23 @@ impl EasyPdfApp {
     pub fn open_recent(&mut self, path: &str) {
         if let Some(i) = self.tab_showing(path) {
             self.active = Some(i);
-            return;
         } else {
             #[cfg(not(target_arch = "wasm32"))]
             self.open_path(path);
-        }
-        #[cfg(target_arch = "wasm32")]
-        if is_browser_recent_path(path) {
-            let Some(recent) = self.recent.iter().find(|recent| recent.path == path) else {
-                return;
-            };
-            load_browser_recent(
-                self.browser_recent_scope.clone(),
-                recent.path.clone(),
-                recent.name.clone(),
-                self.browser_recent_inbox.clone(),
-                self.browser_recent_events.clone(),
-                self.ctx.clone(),
-            );
+            #[cfg(target_arch = "wasm32")]
+            if is_browser_recent_path(path) {
+                let Some(recent) = self.recent.iter().find(|recent| recent.path == path) else {
+                    return;
+                };
+                load_browser_recent(
+                    self.browser_recent_scope.clone(),
+                    recent.path.clone(),
+                    recent.name.clone(),
+                    self.browser_recent_inbox.clone(),
+                    self.browser_recent_events.clone(),
+                    self.ctx.clone(),
+                );
+            }
         }
     }
 
@@ -843,14 +842,14 @@ impl EasyPdfApp {
                 false
             }
         } {
-            let Some(recent) = self.recent.pop() else { break };
+            let Some(_recent) = self.recent.pop() else { break };
             #[cfg(target_arch = "wasm32")]
-            if is_browser_recent_path(&recent.path) {
-                browser_bytes = browser_bytes.saturating_sub(recent.size);
+            if is_browser_recent_path(&_recent.path) {
+                browser_bytes = browser_bytes.saturating_sub(_recent.size);
                 forget_browser_recent(
                     self.browser_recent_scope.clone(),
-                    recent.path,
-                    recent.name,
+                    _recent.path,
+                    _recent.name,
                     self.browser_recent_events.clone(),
                     self.ctx.clone(),
                 );
