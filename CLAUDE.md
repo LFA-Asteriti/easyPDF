@@ -11,6 +11,12 @@ easyPDF is a clean-room, open-source, Rust-native PDF application targeting Adob
 
 `plan/` is gitignored and local-only. The machine-readable parity checklist lives in `parity/` (committed).
 
+## Execution granularity and handoff prompts
+- Work in complete, end-to-end phases. Do not create microphases, status-only phases or artificial handoffs unless there is a real safety risk, an actual operational error, an external blocker, or a user decision that materially changes the result.
+- Progress updates do not create a phase boundary: continue through implementation, focused verification, recording and review while safe in-scope work remains.
+- At the end of each complete phase, provide one self-contained prompt for the next phase. Starting with the next handoff, that prompt must include the objective, relevant context, scope, files or components involved, required checks, success criteria, safety constraints and any genuine unresolved blocker.
+- When a dedicated phase reviewer is requested, give it the complete phase evidence and have it return the readiness verdict together with that next complete prompt.
+
 ## Non-negotiables
 - **Assets: read `AGENTS.md` §1 before adding or showing any icon, image, font or document.** No assets from Adobe products, ever. Only openly licensed or contributor-original assets are allowed, each with an entry in `ATTRIBUTION.toml`. `cargo xtask assets` enforces this. `AGENTS.md` overrides this file.
 - **Fonts live in [craft-fonts](https://github.com/storytold/craft-fonts).** Never commit font files here (`AGENTS.md` §1.4). It is the optional build input `CRAFT_FONTS_DIR`: `git clone https://github.com/storytold/craft-fonts ../craft-fonts && CRAFT_FONTS_DIR=../craft-fonts cargo test --workspace` embeds the Japanese fonts (UI fallback, Japanese text in edited PDFs) and runs their tests, which otherwise skip. Code using `easypdf_fonts::CRAFT_FONTS` must work when it is empty.
