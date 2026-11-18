@@ -175,6 +175,43 @@ const IT_EASYPDF_TRANSLATIONS: &[(&str, &str)] = &[
     ("Synchronize", "Sincronizza"),
     ("Disconnect", "Disconnetti"),
     ("Disconnected", "Disconnesso"),
+    ("A link or special file, which isn't followed", "Un collegamento o file speciale, che non viene seguito"),
+    ("Alignment", "Allineamento"),
+    ("Couldn't be read: {reason}", "Impossibile leggere: {reason}"),
+    ("Folder", "Cartella"),
+    ("Larger than 512 MiB", "Superiore a 512 MiB"),
+    ("Less", "Meno"),
+    ("Listing the folder…", "Elenco della cartella…"),
+    ("Load to edit", "Carica per modificare"),
+    ("Loading {name}…", "Caricamento di {name}…"),
+    ("Lowering this forgets the oldest files. At 0 there is no list.", "Riducendo questo valore vengono dimenticati i file meno recenti. Con 0 l'elenco viene disattivato."),
+    ("Matches: {matches}. Files with matches: {files}. PDFs read to the end: {searched} of {found}.", "Corrispondenze: {matches}. File con corrispondenze: {files}. PDF letti fino alla fine: {searched} di {found}."),
+    ("Not searched: {n}", "Non cercati: {n}"),
+    ("Output intent: {list}", "Profilo di output: {list}"),
+    ("Pages that couldn't be read: {n}", "Pagine che non è stato possibile leggere: {n}"),
+    ("Reading file {n} of {total}: {name}", "Lettura del file {n} di {total}: {name}"),
+    ("Recent files to keep", "File recenti da conservare"),
+    ("Search a folder", "Cerca in una cartella"),
+    ("Search a folder…", "Cerca in una cartella…"),
+    ("Searching a folder needs the desktop app", "La ricerca in una cartella richiede l'app desktop"),
+    ("Secured", "Protetto"),
+    ("Shortcut", "Scorciatoia"),
+    ("Show the current page number over the document", "Mostra il numero della pagina corrente sopra il documento"),
+    ("Stop", "Interrompi"),
+    ("Stopped at {limit} matches.", "Interrotto al raggiungimento di {limit} corrispondenze."),
+    ("Stopped before the end.", "Interrotto prima della fine."),
+    ("Stopped: too many files took too long to read.", "Interrotto: la lettura di troppi file ha richiesto troppo tempo."),
+    ("Subscript", "Pedice"),
+    ("Super Admin", "Super amministratore"),
+    ("Superscript", "Apice"),
+    ("The rest are left out of this list.", "Gli altri elementi non vengono mostrati in questo elenco."),
+    ("The search stopped unexpectedly.", "La ricerca si è interrotta in modo imprevisto."),
+    ("This folder is too large or too deep to search all of it.", "Questa cartella è troppo grande o troppo profonda per eseguire una ricerca completa."),
+    ("This large file is being read from disk to save memory, so it can't be edited, filled in or signed yet.", "Questo file di grandi dimensioni viene letto dal disco per risparmiare memoria, quindi non può ancora essere modificato, compilato o firmato."),
+    ("To print this large file, load all of it first with Load to edit.", "Per stampare questo file di grandi dimensioni, caricalo prima interamente con Carica per modificare."),
+    ("Took too long to read", "La lettura ha richiesto troppo tempo"),
+    ("Viewport", "Area di visualizzazione"),
+    ("Warning", "Avviso"),
     ("The credential stays encrypted on the server and is never shown to organization users.", "La credenziale resta cifrata sul server e non viene mai mostrata agli utenti dell'organizzazione."),
     ("This action cannot be undone.", "Questa azione non può essere annullata."),
     ("Translate to", "Traduci in"),
@@ -354,7 +391,23 @@ pub(super) fn apply(root: &Path, stage: &Path, backup_label: &str) -> Result<()>
         if code == "it" {
             branded.push_str("\n\teasyPDF processes local files on your device. The protected web edition uses your authorized account.\teasyPDF elabora i file locali sul dispositivo. La versione web protetta utilizza il tuo account autorizzato.\n");
             for (source, translation) in IT_EASYPDF_TRANSLATIONS {
-                if !branded.lines().any(|line| line.split('\t').nth(1) == Some(*source)) {
+                let mut replaced = false;
+                branded = branded
+                    .lines()
+                    .map(|line| {
+                        let mut fields = line.split('\t');
+                        let context = fields.next().unwrap_or_default();
+                        if fields.next() == Some(*source) {
+                            replaced = true;
+                            format!("{context}\t{source}\t{translation}")
+                        } else {
+                            line.to_owned()
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                branded.push('\n');
+                if !replaced {
                     branded.push_str(&format!("\t{source}\t{translation}\n"));
                 }
             }
