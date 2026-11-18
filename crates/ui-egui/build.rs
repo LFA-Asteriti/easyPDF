@@ -202,6 +202,8 @@ const IT_EASYPDF_TRANSLATIONS: &[(&str, &str)] = &[
     ("Shared documents", "Documenti condivisi"),
     ("Super Admin", "Super Admin"),
     ("Synchronize", "Sincronizza"),
+    ("Disconnect", "Disconnetti"),
+    ("Disconnected", "Disconnesso"),
     (
         "The credential stays encrypted on the server and is never shown to organization users.",
         "La credenziale resta cifrata sul server e non viene mai mostrata agli utenti dell'organizzazione.",
@@ -396,6 +398,47 @@ const IT_EASYPDF_TRANSLATIONS: &[(&str, &str)] = &[
     ),
     ("Vertices", "Vertici"),
     ("thick", "spesso"),
+    ("A link or special file, which isn't followed", "Un collegamento o file speciale, che non viene seguito"),
+    ("Couldn't be read: {reason}", "Impossibile leggere: {reason}"),
+    ("Larger than 512 MiB", "Superiore a 512 MiB"),
+    ("Listing the folder…", "Elenco della cartella…"),
+    ("Load to edit", "Carica per modificare"),
+    ("Loading {name}…", "Caricamento di {name}…"),
+    (
+        "Lowering this forgets the oldest files. At 0 there is no list.",
+        "Riducendo questo valore vengono dimenticati i file meno recenti. Con 0 non viene conservato alcun elenco.",
+    ),
+    (
+        "Matches: {matches}. Files with matches: {files}. PDFs read to the end: {searched} of {found}.",
+        "Corrispondenze: {matches}. File con corrispondenze: {files}. PDF letti fino alla fine: {searched} di {found}.",
+    ),
+    ("Not searched: {n}", "Non cercati: {n}"),
+    ("Output intent: {list}", "Intento di output: {list}"),
+    ("Pages that couldn't be read: {n}", "Pagine non leggibili: {n}"),
+    ("Reading file {n} of {total}: {name}", "Lettura del file {n} di {total}: {name}"),
+    ("Recent files to keep", "File recenti da conservare"),
+    ("Search a folder", "Cerca in una cartella"),
+    ("Search a folder…", "Cerca in una cartella…"),
+    ("Searching a folder needs the desktop app", "La ricerca in una cartella richiede l'app desktop"),
+    ("Show the current page number over the document", "Mostra il numero della pagina corrente sopra il documento"),
+    ("Stopped at {limit} matches.", "Interrotto al raggiungimento di {limit} corrispondenze."),
+    ("Stopped before the end.", "Interrotto prima della fine."),
+    ("Stopped: too many files took too long to read.", "Interrotto: troppi file hanno richiesto troppo tempo per essere letti."),
+    ("The rest are left out of this list.", "Gli altri elementi non sono inclusi in questo elenco."),
+    ("The search stopped unexpectedly.", "La ricerca si è interrotta in modo imprevisto."),
+    (
+        "This folder is too large or too deep to search all of it.",
+        "Questa cartella è troppo grande o contiene troppi livelli per essere cercata interamente.",
+    ),
+    (
+        "This large file is being read from disk to save memory, so it can't be edited, filled in or signed yet.",
+        "Questo file di grandi dimensioni viene letto dal disco per risparmiare memoria, quindi non può ancora essere modificato, compilato o firmato.",
+    ),
+    (
+        "To print this large file, load all of it first with Load to edit.",
+        "Per stampare questo file di grandi dimensioni, caricalo prima interamente con Carica per modificare.",
+    ),
+    ("Took too long to read", "Lettura troppo lunga"),
 ];
 
 /// `CRAFT_I18N` from `CRAFT_I18N_DIR`: the `Embedded` list the craft-i18n crate reads.

@@ -109,6 +109,11 @@ fn request_document(base: &str, token: &str, id: u64) -> Result<Vec<u8>, String>
 }
 
 fn execute(command: Command, base_store: &Mutex<String>, token_store: &Mutex<String>) -> Result<Event, String> {
+    if matches!(command, Command::Disconnect) {
+        set_lock(base_store, String::new());
+        set_lock(token_store, String::new());
+        return Ok(Event::Disconnected);
+    }
     if let Command::Connect { url, email, password } = command {
         let value = request(&url, "", "login", Some(serde_json::json!({"email": email, "password": password})))?;
         let token = value.get("token").and_then(serde_json::Value::as_str).ok_or("Access token missing")?.to_string();
@@ -138,7 +143,9 @@ fn execute(command: Command, base_store: &Mutex<String>, token_store: &Mutex<Str
         AiTask::Translate => "translate",
     };
     let (action, body) = match command {
-        Command::Connect { .. } | Command::Refresh | Command::OpenSharedDocument { .. } => return Err("Invalid connected command.".into()),
+        Command::Connect { .. } | Command::Disconnect | Command::Refresh | Command::OpenSharedDocument { .. } => {
+            return Err("Invalid connected command.".into());
+        }
         Command::LoadCoverKit { id } => ("cover-load", serde_json::json!({"id": id})),
         Command::SaveCoverKit { name, make_default, front_name, front, back_name, back } => (
             "cover-save",
@@ -219,4 +226,19 @@ fn decode_optional(value: Option<&serde_json::Value>) -> Result<Option<Vec<u8>>,
         .and_then(serde_json::Value::as_str)
         .map(|encoded| base64::engine::general_purpose::STANDARD.decode(encoded).map_err(|error| error.to_string()))
         .transpose()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disconnect_forgets_base_and_token_without_network_access() {
+        let base = Mutex::new("https://example.test".to_string());
+        let token = Mutex::new("secret-token".to_string());
+
+        assert!(matches!(execute(Command::Disconnect, &base, &token), Ok(Event::Disconnected)));
+        assert!(lock_value(&base).is_empty());
+        assert!(lock_value(&token).is_empty());
+    }
 }

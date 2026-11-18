@@ -366,7 +366,7 @@ async fn send_connected_command(command: easypdf_ui_egui::connected::Command, cs
         return Ok(Event::SharedDocumentLoaded { name: name.clone(), bytes: app_api_document(*id).await? });
     }
     let (action, mut body) = match command {
-        Command::Connect { .. } => return Err("The Web app already uses its signed-in account.".into()),
+        Command::Connect { .. } | Command::Disconnect => return Err("The Web app already uses its signed-in account.".into()),
         Command::Refresh => {
             let snapshot = fetch_connected_snapshot().await?;
             return Ok(Event::Snapshot(snapshot));

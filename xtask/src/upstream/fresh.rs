@@ -849,7 +849,7 @@ fn apply_web_host(root: &Path, stage: &Path, release: &str, backup_label: &str) 
         bail!("review required: upstream web host changed in {} (expected {expected_upstream}, found {observed_upstream})", destination.display());
     }
     let local = read_bounded(&root.join(relative))?;
-    if sha256(&local) != "519a05cd49fc922013b0512c9ae274dcc4b4e76522e6653b5596e40ae972d272" {
+    if sha256(&local) != "99bade59c0c603a70c9e98fd17f0bebd414da465bf288d340ec772bcf6d161fa" {
         bail!("review required: easyPDF web host changed after layer extraction");
     }
     let backup = root.join("upstream/backups").join(format!("{backup_label}-fresh-web-host-before-apply")).join(relative);
@@ -882,7 +882,7 @@ fn apply_web_host(root: &Path, stage: &Path, release: &str, backup_label: &str) 
     atomic_write(&manifest_backup, &manifest_before)?;
     let web_source: &[u8] = if release == "v0.19.0" {
         let template = include_bytes!("fresh/web_host_v019.rs");
-        if sha256(template) != "3487b173b56366b1b51588f652e3d0e51a7a607931bff1b34a0860144b160c7b" {
+        if sha256(template) != "af6b130c46c325aef3c90159980ab2d435897a254f13bffb8d10eb19577135ab" {
             bail!("review required: easyPDF v0.19 page-host template changed");
         }
         template

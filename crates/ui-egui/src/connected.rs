@@ -185,6 +185,8 @@ pub enum Command {
         email: String,
         password: String,
     },
+    /// Forget the native portal session without changing the Web account session.
+    Disconnect,
     Refresh,
     LoadCoverKit {
         id: u64,
@@ -293,6 +295,7 @@ pub enum Command {
 #[derive(Clone, Debug)]
 pub enum Event {
     Connected(Snapshot),
+    Disconnected,
     Snapshot(Snapshot),
     CoverKitLoaded { id: u64, front_name: Option<String>, front: Option<Vec<u8>>, back_name: Option<String>, back: Option<Vec<u8>> },
     Models(Vec<String>),
@@ -353,6 +356,32 @@ pub struct State {
 }
 
 impl State {
+    fn clear_session(&mut self) {
+        self.snapshot = None;
+        self.busy = false;
+        self.error = None;
+        self.password.clear();
+        self.selected_cover = None;
+        self.selected_cover_ids.clear();
+        self.selected_user_ids.clear();
+        self.selected_organization_ids.clear();
+        self.load_default_cover_after_refresh = false;
+        self.new_user_password.clear();
+        self.new_user_password_confirm.clear();
+        self.user_editor = None;
+        self.organization_editor = None;
+        self.confirm_delete_users = false;
+        self.delete_organization_id = None;
+        self.delete_organization_users = false;
+        self.ai_secret.clear();
+        self.ai_models.clear();
+        self.ai_shared_user_ids.clear();
+        self.ai_result.clear();
+        self.share_dialog = false;
+        self.share_recipient_ids.clear();
+        self.next_background_refresh = 0.0;
+    }
+
     pub fn seed_snapshot(&mut self, snapshot: Snapshot) {
         self.selected_cover = snapshot.cover_kits.iter().find(|kit| kit.is_default).or_else(|| snapshot.cover_kits.first()).map(|kit| kit.id);
         self.selected_user_ids.retain(|id| snapshot.users.iter().any(|user| user.id == *id));
@@ -483,6 +512,11 @@ impl EasyPdfApp {
         for event in events {
             match event {
                 Event::Connected(snapshot) => self.connected.seed_snapshot(snapshot),
+                Event::Disconnected => {
+                    self.connected.clear_session();
+                    self.cover_draft = Default::default();
+                    self.notify_tr("Disconnected");
+                }
                 Event::Snapshot(snapshot) => {
                     self.connected.seed_snapshot(snapshot);
                     if std::mem::take(&mut self.connected.load_default_cover_after_refresh)
@@ -1024,9 +1058,16 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                 ui.label(egui::RichText::new(account.display_name).font(crate::theme::semibold(15.0)));
                 ui.label(&account.email);
                 ui.label(account.organization_name.as_deref().unwrap_or(tl!("Personal account")));
-                if ui.add_enabled_ui(!app.connected.busy, |ui| crate::widgets::pill_button(ui, tl!("Synchronize"), false)).inner.clicked() {
-                    action = Some(Command::Refresh);
-                }
+                ui.horizontal(|ui| {
+                    if ui.add_enabled_ui(!app.connected.busy, |ui| crate::widgets::pill_button(ui, tl!("Synchronize"), false)).inner.clicked() {
+                        action = Some(Command::Refresh);
+                    }
+                    if cfg!(not(target_arch = "wasm32"))
+                        && ui.add_enabled_ui(!app.connected.busy, |ui| crate::widgets::pill_button(ui, tl!("Disconnect"), false)).inner.clicked()
+                    {
+                        action = Some(Command::Disconnect);
+                    }
+                });
                 if !app.portal_url.is_empty() {
                     section(ui, tl!("Web installation"));
                     ui.label(
@@ -1594,6 +1635,36 @@ fn cover_preview(ui: &mut egui::Ui, id: u64, side: &str, encoded: Option<&str>, 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn disconnect_clears_session_secrets_and_selection() {
+        let mut state = State {
+            snapshot: Some(Snapshot::default()),
+            busy: true,
+            password: "password".into(),
+            selected_cover: Some(7),
+            selected_cover_ids: [7].into_iter().collect(),
+            new_user_password: "temporary".into(),
+            new_user_password_confirm: "temporary".into(),
+            ai_secret: "secret".into(),
+            ai_models: vec!["model".into()],
+            ai_result: "result".into(),
+            share_dialog: true,
+            share_recipient_ids: [9].into_iter().collect(),
+            next_background_refresh: 30.0,
+            ..Default::default()
+        };
+
+        state.clear_session();
+
+        assert!(state.snapshot.is_none());
+        assert!(!state.busy && state.password.is_empty());
+        assert!(state.selected_cover.is_none() && state.selected_cover_ids.is_empty());
+        assert!(state.new_user_password.is_empty() && state.new_user_password_confirm.is_empty());
+        assert!(state.ai_secret.is_empty() && state.ai_models.is_empty() && state.ai_result.is_empty());
+        assert!(!state.share_dialog && state.share_recipient_ids.is_empty());
+        assert_eq!(state.next_background_refresh, 0.0);
+    }
 
     #[test]
     fn snapshot_selects_default_cover_and_never_keeps_provider_secret() {
