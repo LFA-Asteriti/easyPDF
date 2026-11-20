@@ -1,0 +1,63 @@
+[package]
+name = "easypdf-engine"
+description = "easyPDF engine façade: session, documents, command/tool catalogue"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+craft-docpath = { workspace = true }
+easypdf-measure = { workspace = true }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "tiff"] }
+easypdf-render = { workspace = true }
+easypdf-cos = { workspace = true }
+easypdf-organize = { workspace = true }
+easypdf-annot = { workspace = true }
+easypdf-forms = { workspace = true }
+easypdf-xfa = { workspace = true }
+easypdf-edit = { workspace = true }
+easypdf-content = { workspace = true }
+easypdf-audit = { workspace = true }
+easypdf-redact = { workspace = true }
+easypdf-print = { workspace = true }
+easypdf-xfdf = { workspace = true }
+easypdf-sign = { workspace = true }
+easypdf-optimize = { workspace = true }
+easypdf-a11y = { workspace = true }
+easypdf-ocr = { workspace = true }
+easypdf-js = { workspace = true }
+easypdf-compare = { workspace = true }
+easypdf-preflight = { workspace = true }
+easypdf-export = { workspace = true }
+easypdf-fonts = { workspace = true }
+easypdf-create = { workspace = true }
+easypdf-model = { workspace = true }
+easypdf-geom = { workspace = true }
+thiserror = { workspace = true }
+png = "0.18"
+# Already in the graph (through image and easypdf-create): image's TiffEncoder can't set the
+# resolution or the compression of an exported page.
+tiff = "0.11"
+# Already in the graph (url and idna through webbrowser, icu_properties through boa): they show
+# the host of a document's link the way the browser reads it (links::display_host).
+url = "2.5"
+idna = "1.1"
+icu_properties = "2.3"
+unicode-segmentation = "1.13"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Already in the graph through lopdf; used only for the local UTC offset ("today"). The workspace
+# entry is std-only; this target adds `clock` for `chrono::Local::now`.
+chrono = { workspace = true, features = ["clock"] }
+getrandom = "0.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.4", features = ["wasm_js"] }
+
+[dev-dependencies]
+easypdf-testkit = { workspace = true }
+# JBIG2 fixtures (`encode_jbig2_generic`).
+easypdf-filters = { workspace = true }

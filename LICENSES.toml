@@ -1,0 +1,288 @@
+# Stage 1 source documents only. Destinations are logical names, not packaging instructions.
+# licences lists audited full-text identifiers; omission grants no bundle applicability.
+
+[[document]]
+source = "LICENSE-APACHE"
+licences = ["Apache-2.0"]
+destination = "LICENSE-APACHE"
+sha256 = "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+
+[[document]]
+source = "LICENSE-MIT"
+licences = ["MIT"]
+destination = "LICENSE-MIT"
+sha256 = "cd7032ea33b71427f188e34ffb4aee9d6868a57fd196037c5c8b2be03a2a0352"
+
+[[document]]
+source = "NOTICE"
+destination = "NOTICE"
+sha256 = "199714cf704c9b72ecca3bc693855cfba531ac3cb79b536d396bfe9650f03752"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/biz-ud-mincho/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/biz-ud-mincho/OFL.txt"
+sha256 = "9c244a5edd2525aa4aa43dd714d7de00f3b3591a522d82d724db3644b5a95568"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/biz-ud-pgothic/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/biz-ud-pgothic/OFL.txt"
+sha256 = "062c81ae55b5ddd56c08331c8fe86598c1ef7f4453560c74706427a008b68534"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/lxgw-wenkai-lite/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/lxgw-wenkai-lite/OFL.txt"
+sha256 = "7752fbb4e6c855f73a57a30caac80f583115658c656e11383d741571ddfa8882"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/nanum-gothic/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/nanum-gothic/OFL.txt"
+sha256 = "6bca0c1a8c713fa5e703c5427a273ea736181c558312962569c28b4cb390fee3"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-arabic/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-arabic/OFL.txt"
+sha256 = "3b7e321615e412e5fbb9eab5bf1c0a4cb84c732d3d5a9e9e3822972d5fb70b97"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-bengali/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-bengali/OFL.txt"
+sha256 = "c7c641f2b8bc47cecc96e3a7c3ba44c098d4d31505b42aa09f2a3f25de57c448"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-cjk-sc/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-cjk-sc/OFL.txt"
+sha256 = "88f117575237307bdd86a17ef15e21790fc9a662fe4dfb103ca1ca077f0d9982"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-devanagari/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-devanagari/OFL.txt"
+sha256 = "41221cfdd268fa8e338829cccec0526e0200a0ce9e0bc3c627254c12a99d3a98"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-georgian/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-georgian/OFL.txt"
+sha256 = "2c9d69cc13d29394783a99d12a823fd6bc4b2069e6ce795a5515ae187e858da7"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-gujarati/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-gujarati/OFL.txt"
+sha256 = "6873661146da1beb97a378ed3e3a509ebb6f65fcd095655eeff2f60d591c0bdc"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-gurmukhi/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-gurmukhi/OFL.txt"
+sha256 = "913bb62073cec207e71c3735cf40d3d034d4e3756f54493bfd2182ae29d634ce"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-hebrew/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-hebrew/OFL.txt"
+sha256 = "1acb8a4cf8e3d441eb573174faab52139071fee5cfa5e3e3f148becf90a54631"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-kannada/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-kannada/OFL.txt"
+sha256 = "fcb1a0a14352eb3afb14f26457c36842e9c2ddcd76a5be1151e44e16c0c7956e"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-malayalam/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-malayalam/OFL.txt"
+sha256 = "9526d417125acbf664f39a70ef0cba12a04f4ec73802d96d34c97af62990b386"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-oriya/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-oriya/OFL.txt"
+sha256 = "fe17b9f037f58c30c54a7a7850b27f0e9b0f948a6b4460028df3d23e1a09894a"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-symbols-2/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-symbols-2/OFL.txt"
+sha256 = "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-symbols/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-symbols/OFL.txt"
+sha256 = "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-tamil/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-tamil/OFL.txt"
+sha256 = "0e968b3ccaad38335875e7bd11bd470c77632303f8fe15b739c0d548c04571d5"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-telugu/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-telugu/OFL.txt"
+sha256 = "7f1924eb2376e2d8d143993928a8c73b732dfcfcafebcd695e3b8f8538b5b639"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-thai/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-thai/OFL.txt"
+sha256 = "0e4067898723c9acddf967edda99a5ed2088cd857a8e9949084f609358efe38a"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/shippori-mincho/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/shippori-mincho/OFL.txt"
+sha256 = "0aef534f5885c2f30b360ed5fb09ea4661a40ec62845c35f8354e26d7977d87d"
+
+[[document]]
+source = "assets/LICENSE-easyPDF-brand.txt"
+destination = "assets/LICENSE-easyPDF-brand.txt"
+sha256 = "62bf8b1241cbc05dfe415e2a25535efe2194c7f2f26d7fefb496e3ae4074d42a"
+
+[[document]]
+source = "assets/app-icon/LICENSE-Devicon-MIT.txt"
+licences = ["MIT"]
+destination = "assets/app-icon/LICENSE-Devicon-MIT.txt"
+sha256 = "121194741d4a915b9f5890fdd6dd95121f9b1f816517c792358d72d7c838d664"
+
+[[document]]
+source = "assets/fonts/OFL-DancingScript.txt"
+destination = "assets/fonts/OFL-DancingScript.txt"
+sha256 = "6f090277c00af96651ce6dbcc38ff1591047a3bffef486e80b6a32e8276a8201"
+
+[[document]]
+source = "assets/fonts/OFL-Inter.txt"
+destination = "assets/fonts/OFL-Inter.txt"
+sha256 = "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+
+[[document]]
+source = "assets/fonts/OFL-JetBrainsMono.txt"
+destination = "assets/fonts/OFL-JetBrainsMono.txt"
+sha256 = "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697"
+
+[[document]]
+source = "assets/icons/LICENSE-lucide.txt"
+destination = "assets/icons/LICENSE-lucide.txt"
+sha256 = "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+
+[[document]]
+source = "licenses/CMap-LICENSE.txt"
+licences = ["BSD-3-Clause"]
+destination = "licenses/CMap-LICENSE.txt"
+sha256 = "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29"
+origin = "https://static.crates.io/crates/hayro-cmap/hayro-cmap-0.1.0.crate#assets/LICENSE.txt"
+
+[[document]]
+source = "licenses/egui-Hack-Regular.txt"
+licences = ["MIT", "Bitstream-Vera"]
+destination = "licenses/egui-Hack-Regular.txt"
+sha256 = "47c0cccbeec7e8614548cc485588b28149e7874188df5f41b36efebcee285c87"
+origin = "https://raw.githubusercontent.com/emilk/egui/0.36.2/crates/epaint_default_fonts/fonts/Hack-Regular.txt"
+
+[[document]]
+source = "licenses/egui-OFL.txt"
+licences = ["OFL-1.1"]
+destination = "licenses/egui-OFL.txt"
+sha256 = "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+origin = "https://raw.githubusercontent.com/emilk/egui/0.36.2/crates/epaint_default_fonts/fonts/OFL.txt"
+
+[[document]]
+source = "licenses/egui-UFL.txt"
+licences = ["Ubuntu-font-1.0"]
+destination = "licenses/egui-UFL.txt"
+sha256 = "2f0015108d68627bd788d313f529c21ff4da2c2c42a5e1f3883acc83480f9002"
+origin = "https://raw.githubusercontent.com/emilk/egui/0.36.2/crates/epaint_default_fonts/fonts/UFL.txt"
+
+[[document]]
+source = "licenses/egui-emoji-icon-font-mit-license.txt"
+licences = ["MIT"]
+destination = "licenses/egui-emoji-icon-font-mit-license.txt"
+sha256 = "b9d2c1d909aa149996fd4c91dcb92b2362a04431640c1d200959da94caf8cde1"
+origin = "https://raw.githubusercontent.com/emilk/egui/0.36.2/crates/epaint_default_fonts/fonts/emoji-icon-font-mit-license.txt"
+
+[[document]]
+source = "licenses/prc-rs-LICENSE.txt"
+licences = ["MIT"]
+destination = "licenses/prc-rs-LICENSE.txt"
+sha256 = "ddb846513d92153d8fa16b18ed3e7c86953a582f0d2f49f02b29f1bd569dac58"
+origin = "https://raw.githubusercontent.com/ralovich/prc-rs/287b671bb5b31b05efb5ec1b98f7c359b9e4dd7d/LICENSE"
+
+[[document]]
+source = "vendor/hayro-interpret/LICENSE-APACHE"
+licences = ["Apache-2.0"]
+destination = "vendor/hayro-interpret/LICENSE-APACHE"
+sha256 = "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9"
+
+[[document]]
+source = "vendor/hayro-interpret/LICENSE-MIT"
+licences = ["MIT"]
+destination = "vendor/hayro-interpret/LICENSE-MIT"
+sha256 = "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac"
+
+[[document]]
+source = "vendor/hayro-interpret/assets/CGATS_LICENSE.txt"
+destination = "vendor/hayro-interpret/assets/CGATS_LICENSE.txt"
+sha256 = "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9"
+
+[[document]]
+source = "vendor/hayro-interpret/assets/LICENSE_FOXIT"
+destination = "vendor/hayro-interpret/assets/LICENSE_FOXIT"
+sha256 = "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7"
+
+[[document]]
+source = "vendor/hayro-cmap/assets/LICENSE.txt"
+licences = ["BSD-3-Clause"]
+destination = "vendor/hayro-cmap/assets/LICENSE.txt"
+sha256 = "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29"
+
+[[document]]
+source = "vendor/vello_common/LICENSE-MIT"
+licences = ["MIT"]
+destination = "vendor/vello_common/LICENSE-MIT"
+sha256 = "adf157330f722fe7cfd5964a2a6974eff851b718228c6735724a11706e6f4dec"
+
+[[bundled]]
+crate = "epaint_default_fonts"
+path = "fonts/Ubuntu-Light.ttf"
+licence = "Ubuntu-font-1.0"
+documents = ["licenses/egui-UFL.txt"]
+
+[[bundled]]
+crate = "epaint_default_fonts"
+path = "fonts/Hack-Regular.ttf"
+licence = "MIT AND Bitstream-Vera"
+documents = ["licenses/egui-Hack-Regular.txt"]
+
+[[bundled]]
+crate = "epaint_default_fonts"
+path = "fonts/NotoEmoji-Regular.ttf"
+licence = "OFL-1.1"
+documents = ["licenses/egui-OFL.txt"]
+
+[[bundled]]
+crate = "epaint_default_fonts"
+path = "fonts/emoji-icon-font.ttf"
+licence = "MIT"
+documents = ["licenses/egui-emoji-icon-font-mit-license.txt"]
+
+[[bundled]]
+crate = "epaint_default_fonts"
+path = "fonts/egui-icons.ttf"
+licence = "MIT"
+documents = ["licenses/egui-emoji-icon-font-mit-license.txt"]
+
+[[bundled]]
+crate = "hayro-interpret"
+path = "src/font/generated/metrics.rs"
+licence = "MIT OR Apache-2.0"
+documents = ["vendor/hayro-interpret/LICENSE-MIT", "vendor/hayro-interpret/LICENSE-APACHE"]

@@ -1,0 +1,373 @@
+//! Multilingual fonts bundled directly under `assets/easypdf-fonts`.
+//!
+//! `build.rs` validates the internal manifest and embeds its approved faces without network access
+//! or font-related environment variables.
+
+/// One font from the audited internal easyPDF bundle.
+pub struct EasyPdfFont {
+    pub family: &'static str,
+    pub style: &'static str,
+    /// ISO 15924 scripts the font is for, e.g. `"Jpan"`.
+    pub scripts: &'static [&'static str],
+    pub bytes: &'static [u8],
+}
+
+include!(concat!(env!("OUT_DIR"), "/easypdf_fonts.rs"));
+
+impl EasyPdfFont {
+    /// Whether the font is meant for `script` (ISO 15924, e.g. `"Jpan"`).
+    pub fn covers(&self, script: &str) -> bool {
+        self.scripts.contains(&script)
+    }
+
+    /// A unique name for registering the face with a font system ("BIZ UDPGothic Bold").
+    pub fn name(&self) -> String {
+        format!("{} {}", self.family, self.style)
+    }
+}
+
+/// The `Jpan` easyPDF font bundle faces in the order the interface prefers them: BIZ UDPGothic (a UI
+/// face) first, then the rest in manifest order. Empty without easyPDF font bundle.
+pub fn ui_japanese_fonts() -> Vec<&'static EasyPdfFont> {
+    let mut fonts: Vec<&EasyPdfFont> = EASYPDF_FONTS.iter().filter(|f| f.covers("Jpan")).collect();
+    // Stable: manifest order within each group.
+    fonts.sort_by_key(|f| f.family != "BIZ UDPGothic");
+    fonts
+}
+
+/// The `Hans` easyPDF font bundle faces for Simplified Chinese interface text, in manifest order.
+/// Native builds use Noto Sans CJK SC; web builds use LXGW WenKai Lite because WebAssembly cannot
+/// discover fonts installed on the user's operating system.
+pub fn ui_chinese_fonts() -> Vec<&'static EasyPdfFont> {
+    EASYPDF_FONTS.iter().filter(|f| f.covers("Hans")).collect()
+}
+
+/// The `Arab` easyPDF font bundle faces for Arabic-script interface text (file names, document titles),
+/// in manifest order. Empty when built without easyPDF font bundle or when it has no Arabic face.
+pub fn ui_arabic_fonts() -> Vec<&'static EasyPdfFont> {
+    arabic(EASYPDF_FONTS.iter())
+}
+
+/// The face for Arabic text written into PDFs: the first `Arab` face. `None` when built without
+/// easyPDF font bundle or when its revision has no Arabic face.
+pub fn document_arabic_font() -> Option<&'static EasyPdfFont> {
+    ui_arabic_fonts().into_iter().next()
+}
+
+fn arabic<'a>(faces: impl IntoIterator<Item = &'a EasyPdfFont>) -> Vec<&'a EasyPdfFont> {
+    faces.into_iter().filter(|f| f.covers("Arab")).collect()
+}
+
+/// The `Telu` easyPDF font bundle faces for Telugu interface text (the Telugu catalog, file names,
+/// document titles), in manifest order. Empty when built without easyPDF font bundle or when it has no
+/// Telugu face.
+pub fn ui_telugu_fonts() -> Vec<&'static EasyPdfFont> {
+    EASYPDF_FONTS.iter().filter(|f| f.covers("Telu")).collect()
+}
+
+/// Thai faces shared by the interface and PDF text writer.
+pub fn ui_thai_fonts() -> Vec<&'static EasyPdfFont> {
+    EASYPDF_FONTS.iter().filter(|f| f.covers("Thai")).collect()
+}
+
+pub fn document_thai_font() -> Option<&'static EasyPdfFont> {
+    ui_thai_fonts().into_iter().next()
+}
+
+/// The `Deva` easyPDF font bundle faces for Devanagari interface text (the Hindi catalog, file names,
+/// document titles), in manifest order. Empty when built without easyPDF font bundle or when its revision
+/// has no Devanagari face; a desktop build then falls back to one font already installed on the
+/// machine (`SYSTEM_DEVANAGARI_FALLBACK`), and the web build shows replacement boxes.
+pub fn ui_devanagari_fonts() -> Vec<&'static EasyPdfFont> {
+    EASYPDF_FONTS.iter().filter(|f| f.covers("Deva")).collect()
+}
+
+/// The face for Devanagari text written into PDFs: the first `Deva` face. `None` when built
+/// without easyPDF font bundle or when its revision has no Devanagari face.
+pub fn document_devanagari_font() -> Option<&'static EasyPdfFont> {
+    ui_devanagari_fonts().into_iter().next()
+}
+
+/// The `Hebr` easyPDF font bundle faces for Hebrew interface text (file names, document titles, text
+/// being edited), in manifest order. Empty when built without easyPDF font bundle or when it has no
+/// Hebrew face.
+pub fn ui_hebrew_fonts() -> Vec<&'static EasyPdfFont> {
+    EASYPDF_FONTS.iter().filter(|f| f.covers("Hebr")).collect()
+}
+
+/// The face for Hebrew text written into PDFs: the `Hebr` face of the asked weight, else its
+/// Regular, else any `Hebr` face. `None` without easyPDF font bundle or without a Hebrew face.
+pub fn document_hebrew_font(bold: bool) -> Option<&'static EasyPdfFont> {
+    hebrew_face(EASYPDF_FONTS, bold)
+}
+
+fn hebrew_face(faces: &[EasyPdfFont], bold: bool) -> Option<&EasyPdfFont> {
+    let hebr = || faces.iter().filter(|f| f.covers("Hebr"));
+    let style = if bold { "Bold" } else { "Regular" };
+    hebr().find(|f| f.style == style).or_else(|| hebr().find(|f| f.style == "Regular")).or_else(|| hebr().next())
+}
+
+/// Interface CJK faces in fallback order for the UI language: Simplified Chinese first when
+/// `prefer_hans`, otherwise Japanese first (the historical default).
+///
+/// The order matters beyond glyph shapes. egui renders each character with the FIRST face that
+/// has its glyph, so with Japanese first a Simplified-only character (e.g. U+6B22 欢, absent
+/// from Japanese faces) lands in a different face than its neighbours; the mixed vertical
+/// metrics then sink it below the line. Preferring the UI language's face keeps one line in
+/// one face with one baseline.
+pub fn ui_cjk_fonts(prefer_hans: bool) -> Vec<&'static EasyPdfFont> {
+    order_cjk(EASYPDF_FONTS.iter(), prefer_hans)
+}
+
+fn order_cjk<'a>(faces: impl IntoIterator<Item = &'a EasyPdfFont>, prefer_hans: bool) -> Vec<&'a EasyPdfFont> {
+    let mut out: Vec<&'a EasyPdfFont> = faces.into_iter().filter(|f| f.covers("Hans") || f.covers("Jpan")).collect();
+    let first = if prefer_hans { "Hans" } else { "Jpan" };
+    // The preferred script's faces first (a face covering both counts as preferred); within each
+    // group the Japanese UI face (BIZ UDPGothic, not a serif) leads, otherwise manifest order
+    // (the sort is stable).
+    out.sort_by_key(|f| (!f.covers(first), f.family != "BIZ UDPGothic"));
+    out
+}
+
+/// The face for Japanese text written into PDFs (serif document text): Shippori Mincho, then
+/// BIZ UDMincho, then any other regular `Jpan` face. `None` without easyPDF font bundle.
+pub fn document_japanese_font() -> Option<&'static EasyPdfFont> {
+    document_face(EASYPDF_FONTS, true, false)
+}
+
+/// A real Japanese document face matching serif/sans and weight where available.
+/// Sans text prefers BIZ UDPGothic Bold or Regular. Missing weights fall back to Regular;
+/// serif text keeps the document Mincho preference. No synthetic weight or slant is applied.
+/// `None` without easyPDF font bundle. The small web input currently has only Gothic Regular.
+pub fn document_japanese_font_for_style(serif: bool, bold: bool) -> Option<&'static EasyPdfFont> {
+    document_face(EASYPDF_FONTS, serif, bold)
+}
+
+/// Every `Jpan` face that can stand in for the document text, the best match for the style first
+/// (the face [`document_japanese_font_for_style`] returns), then the others. Not every face has
+/// every glyph (their coverage of e.g. Cyrillic differs), so a caller can move on to the next one.
+/// Empty without easyPDF font bundle.
+pub fn document_japanese_fonts_for_style(serif: bool, bold: bool) -> Vec<&'static EasyPdfFont> {
+    document_faces(EASYPDF_FONTS, serif, bold)
+}
+
+/// The scripts the bundled Inter faces are for.
+static LATIN_SCRIPTS: &[&str] = &["Latn", "Cyrl", "Grek"];
+
+/// The bundled Latin document faces (`assets/fonts`, OFL): every build has them, unlike
+/// easyPDF font bundle. The Japanese faces carry only part of the Cyrillic (`привет` yes, Uzbek `қизил`
+/// and Kazakh `әже` no), so letters like қ, ғ, ҳ, ә, ө, ү, ұ and һ have no face at all without
+/// these.
+static INTER_REGULAR_FACE: EasyPdfFont =
+    EasyPdfFont { family: "Inter", style: "Regular", scripts: LATIN_SCRIPTS, bytes: include_bytes!("../../../assets/fonts/Inter-Regular.ttf") };
+static INTER_SEMIBOLD_FACE: EasyPdfFont =
+    EasyPdfFont { family: "Inter", style: "SemiBold", scripts: LATIN_SCRIPTS, bytes: include_bytes!("../../../assets/fonts/Inter-SemiBold.ttf") };
+
+/// The face for Latin, Greek and Cyrillic text written into PDFs: the bundled Inter Regular, or
+/// SemiBold for bold text. Present in every build, crafted ones included.
+pub fn document_latin_fonts(bold: bool) -> Vec<&'static EasyPdfFont> {
+    vec![if bold { &INTER_SEMIBOLD_FACE } else { &INTER_REGULAR_FACE }]
+}
+
+fn document_face(faces: &[EasyPdfFont], serif: bool, bold: bool) -> Option<&EasyPdfFont> {
+    document_faces(faces, serif, bold).into_iter().next()
+}
+
+fn document_faces(faces: &[EasyPdfFont], serif: bool, bold: bool) -> Vec<&EasyPdfFont> {
+    let jpan = || faces.iter().filter(|f| f.covers("Jpan"));
+    let mut preferred = Vec::new();
+    if !serif {
+        let style = if bold { "Bold" } else { "Regular" };
+        preferred.extend(jpan().find(|f| f.family == "BIZ UDPGothic" && f.style == style));
+        preferred.extend(jpan().find(|f| f.family == "BIZ UDPGothic" && f.style == "Regular"));
+    }
+    for family in ["Shippori Mincho", "BIZ UDMincho"] {
+        preferred.extend(jpan().find(|f| f.family == family && f.style == "Regular"));
+    }
+    let mut out: Vec<&EasyPdfFont> = Vec::new();
+    for face in preferred.into_iter().chain(jpan().filter(|f| f.style == "Regular")).chain(jpan()) {
+        if !out.iter().any(|f| std::ptr::eq(*f, face)) {
+            out.push(face);
+        }
+    }
+    out
+}
+
+const fn str_eq(a: &str, b: &str) -> bool {
+    let (a, b) = (a.as_bytes(), b.as_bytes());
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut i = 0;
+    while i < a.len() {
+        if a[i] != b[i] {
+            return false;
+        }
+        i += 1;
+    }
+    true
+}
+
+const fn find(family: &str, style: &str) -> Option<&'static [u8]> {
+    let mut i = 0;
+    while i < EASYPDF_FONTS.len() {
+        let f = &EASYPDF_FONTS[i];
+        if str_eq(f.family, family) && str_eq(f.style, style) {
+            return Some(f.bytes);
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Shippori Mincho Regular from easyPDF font bundle, the preferred face for Japanese document text.
+/// `None` when PdfCraft was built without easyPDF font bundle.
+pub static SHIPPORI_MINCHO: Option<&[u8]> = find("Shippori Mincho", "Regular");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use skrifa::MetadataProvider as _;
+
+    #[test]
+    fn web_chinese_face_covers_simplified_and_traditional_samples() {
+        let bytes = include_bytes!("../../../assets/easypdf-fonts/fonts/lxgw-wenkai-lite/LXGWWenKaiLite-Regular.ttf");
+        let face = skrifa::FontRef::new(bytes).expect("audited LXGW font must parse");
+        for ch in "简体中文欢迎使用繁體中文歡迎使用說明設定".chars() {
+            assert!(face.charmap().map(ch).is_some(), "LXGW is missing U+{:04X} {ch}", u32::from(ch));
+        }
+    }
+
+    #[test]
+    fn cjk_fallback_order_follows_the_ui_language() {
+        // Synthetic faces: order_cjk must not depend on the real build input.
+        static BYTES: &[u8] = b"fake";
+        static LATN: &[&str] = &["Latn"];
+        static JPAN_LATN: &[&str] = &["Jpan", "Latn"];
+        static HANS_LATN: &[&str] = &["Hans", "Latn"];
+        let biz_bold = EasyPdfFont { family: "BIZ UDPGothic", style: "Bold", scripts: JPAN_LATN, bytes: BYTES };
+        let biz = EasyPdfFont { family: "BIZ UDPGothic", style: "Regular", scripts: JPAN_LATN, bytes: BYTES };
+        let hans = EasyPdfFont { family: "FakeHans", style: "Regular", scripts: HANS_LATN, bytes: BYTES };
+        let inter = EasyPdfFont { family: "Inter", style: "Regular", scripts: LATN, bytes: BYTES };
+        let faces = [biz_bold, biz, hans, inter];
+        // Chinese mode: the Hans group first (manifest order), then Japanese.
+        let zh: Vec<&str> = order_cjk([&faces[0], &faces[2], &faces[1]], true).iter().map(|f| f.family).collect();
+        assert_eq!(zh, ["FakeHans", "BIZ UDPGothic", "BIZ UDPGothic"]);
+        // Japanese mode keeps the historical default: the Japanese UI face first.
+        let ja: Vec<&str> = order_cjk([&faces[0], &faces[2], &faces[1]], false).iter().map(|f| f.family).collect();
+        assert_eq!(ja, ["BIZ UDPGothic", "BIZ UDPGothic", "FakeHans"]);
+        // Latin-only faces are never interface CJK fallbacks.
+        assert!(order_cjk(&faces, true).iter().all(|f| f.covers("Hans") || f.covers("Jpan")));
+        // A serif listed first in the manifest never leads the Japanese group, in either mode.
+        let mincho = EasyPdfFont { family: "Shippori Mincho", style: "Regular", scripts: JPAN_LATN, bytes: BYTES };
+        let zh: Vec<&str> = order_cjk([&mincho, &faces[2], &faces[1]], true).iter().map(|f| f.family).collect();
+        assert_eq!(zh, ["FakeHans", "BIZ UDPGothic", "Shippori Mincho"]);
+        let ja: Vec<&str> = order_cjk([&mincho, &faces[2], &faces[1]], false).iter().map(|f| f.family).collect();
+        assert_eq!(ja, ["BIZ UDPGothic", "Shippori Mincho", "FakeHans"]);
+    }
+
+    #[test]
+    fn document_faces_match_style_without_inventing_missing_weights() {
+        let faces = [
+            EasyPdfFont { family: "Shippori Mincho", style: "Regular", scripts: &["Jpan"], bytes: b"serif" },
+            EasyPdfFont { family: "BIZ UDPGothic", style: "Regular", scripts: &["Jpan"], bytes: b"sans" },
+            EasyPdfFont { family: "BIZ UDPGothic", style: "Bold", scripts: &["Jpan"], bytes: b"bold" },
+            EasyPdfFont { family: "BIZ UDPGothic", style: "Bold", scripts: &["Latn"], bytes: b"not-japanese" },
+        ];
+        assert_eq!(document_face(&faces, false, false).unwrap().bytes, b"sans");
+        assert_eq!(document_face(&faces, false, true).unwrap().bytes, b"bold");
+        assert_eq!(document_face(&faces, true, false).unwrap().bytes, b"serif");
+        assert_eq!(document_face(&faces, true, true).unwrap().bytes, b"serif");
+        assert_eq!(document_face(&faces[..2], false, true).unwrap().bytes, b"sans");
+        assert_eq!(document_face(&faces[..1], false, true).unwrap().bytes, b"serif");
+        // Every Japanese face is a candidate, the style's match first and none twice.
+        let order: Vec<&[u8]> = document_faces(&faces, false, true).iter().map(|f| f.bytes).collect();
+        assert_eq!(order, [b"bold".as_slice(), b"sans", b"serif"]);
+        let order: Vec<&[u8]> = document_faces(&faces, true, false).iter().map(|f| f.bytes).collect();
+        assert_eq!(order, [b"serif".as_slice(), b"sans", b"bold"]);
+        assert!(document_face(&faces[3..], false, true).is_none());
+        assert!(document_face(&[], false, true).is_none());
+    }
+
+    #[test]
+    fn arabic_faces_are_picked_by_script_in_manifest_order() {
+        // Synthetic faces: the filter must not depend on the real build input.
+        static BYTES: &[u8] = b"fake";
+        static ARAB_LATN: &[&str] = &["Arab", "Latn"];
+        static JPAN: &[&str] = &["Jpan"];
+        let naskh = EasyPdfFont { family: "FakeNaskh", style: "Regular", scripts: ARAB_LATN, bytes: BYTES };
+        let biz = EasyPdfFont { family: "BIZ UDPGothic", style: "Regular", scripts: JPAN, bytes: BYTES };
+        let kufi = EasyPdfFont { family: "FakeKufi", style: "Regular", scripts: ARAB_LATN, bytes: BYTES };
+        let faces = [naskh, biz, kufi];
+        let ar: Vec<&str> = arabic(&faces).iter().map(|f| f.family).collect();
+        assert_eq!(ar, ["FakeNaskh", "FakeKufi"]);
+        // An Arabic face is never a CJK fallback, and the other way round.
+        assert!(order_cjk(&faces, false).iter().all(|f| f.family == "BIZ UDPGothic"));
+        assert_eq!(ui_arabic_fonts().len(), EASYPDF_FONTS.iter().filter(|f| f.covers("Arab")).count());
+    }
+
+    #[test]
+    fn hebrew_document_faces_follow_the_weight() {
+        static HEBR_LATN: &[&str] = &["Hebr", "Latn"];
+        let faces = [
+            EasyPdfFont { family: "BIZ UDPGothic", style: "Bold", scripts: &["Jpan"], bytes: b"not-hebrew" },
+            EasyPdfFont { family: "FakeHebrew", style: "Regular", scripts: HEBR_LATN, bytes: b"regular" },
+            EasyPdfFont { family: "FakeHebrew", style: "Bold", scripts: HEBR_LATN, bytes: b"bold" },
+        ];
+        assert_eq!(hebrew_face(&faces, false).map(|f| f.bytes), Some(&b"regular"[..]));
+        assert_eq!(hebrew_face(&faces, true).map(|f| f.bytes), Some(&b"bold"[..]));
+        // No bold face: Regular, never a face of another script.
+        assert_eq!(hebrew_face(&faces[..2], true).map(|f| f.bytes), Some(&b"regular"[..]));
+        assert!(hebrew_face(&faces[..1], false).is_none());
+        assert_eq!(ui_hebrew_fonts().len(), EASYPDF_FONTS.iter().filter(|f| f.covers("Hebr")).count());
+        assert_eq!(document_hebrew_font(false).is_some(), EASYPDF_FONTS.iter().any(|f| f.covers("Hebr")));
+    }
+
+    /// `build.rs` embeds the approved native CJK faces whole and applies the general size cap to
+    /// every unapproved family.
+    #[test]
+    fn cjk_faces_follow_the_size_rule() {
+        use crate::cjk_scripts::{MAX_OTHER_CJK_BYTES, WHOLE_CJK_FAMILIES, is_cjk_script};
+        // A tag can carry a region after the code.
+        assert!(["Hant-HK", "Hans", "Jpan", "Hang"].iter().all(|s| is_cjk_script(s)));
+        assert!(!["Latn", "Arab", "Hebr"].iter().any(|s| is_cjk_script(s)));
+        let cjk = EASYPDF_FONTS.iter().filter(|f| f.scripts.iter().any(|s| is_cjk_script(s)));
+        let (whole, other): (Vec<_>, Vec<_>) = cjk.partition(|f| WHOLE_CJK_FAMILIES.contains(&f.family));
+        for face in &other {
+            let len = face.bytes.len();
+            assert!(u64::try_from(len).is_ok_and(|n| n <= MAX_OTHER_CJK_BYTES), "{} is embedded at {len} bytes", face.name());
+        }
+        let bytes: usize = whole.iter().filter(|f| f.covers("Jpan")).map(|f| f.bytes.len()).sum();
+        assert!(bytes < 25_000_000, "{bytes} bytes of Japanese faces");
+    }
+
+    /// The bundled Inter faces carry the Latin, Greek and Cyrillic letters the easyPDF font bundle faces
+    /// lack: Uzbek қ ғ ҳ, Kazakh ә ө ү ұ һ, Ukrainian ї є ґ, Greek. This one runs with or without
+    /// assets/easypdf-fonts (#2593).
+    #[test]
+    fn latin_faces_carry_the_letters_the_japanese_faces_lack() {
+        for face in document_latin_fonts(false).into_iter().chain(document_latin_fonts(true)) {
+            for ch in ['қ', 'ғ', 'ҳ', 'ә', 'ө', 'ү', 'ұ', 'һ', 'ї', 'є', 'ґ', 'ё', 'α', 'β', 'γ', '≥', '≈'] {
+                assert!(crate::japanese_glyph_from(face, ch).is_ok(), "{} has no {ch}", face.name());
+            }
+        }
+        assert_eq!(document_latin_fonts(false)[0].style, "Regular");
+        assert_eq!(document_latin_fonts(true)[0].style, "SemiBold");
+    }
+
+    #[test]
+    fn easypdf_fonts_are_bundled_and_consistent() {
+        assert_eq!(SHIPPORI_MINCHO.is_some(), EASYPDF_FONTS.iter().any(|f| f.family == "Shippori Mincho" && f.style == "Regular"));
+        assert_eq!(document_japanese_font().is_some(), EASYPDF_FONTS.iter().any(|f| f.covers("Jpan")));
+        let ui = ui_japanese_fonts();
+        assert_eq!(ui.len(), EASYPDF_FONTS.iter().filter(|f| f.covers("Jpan")).count());
+        let ui_zh = ui_chinese_fonts();
+        assert_eq!(ui_zh.len(), EASYPDF_FONTS.iter().filter(|f| f.covers("Hans")).count());
+        assert!(!EASYPDF_FONTS.is_empty());
+        assert!(EASYPDF_FONTS.iter().all(|f| !f.bytes.is_empty()));
+        if EASYPDF_FONTS.iter().any(|f| f.family == "BIZ UDPGothic") {
+            assert_eq!(ui.first().map(|f| f.family), Some("BIZ UDPGothic"));
+        }
+        assert_eq!(document_japanese_font().map(|f| f.family), Some("Shippori Mincho"));
+    }
+}

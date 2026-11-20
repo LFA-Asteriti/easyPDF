@@ -1,0 +1,11 @@
+[package]
+name = "easypdf-geom"
+description = "Geometry primitives for easyPDF (points, rects, page transforms)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]

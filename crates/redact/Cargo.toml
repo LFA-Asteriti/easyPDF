@@ -1,0 +1,30 @@
+[package]
+name = "easypdf-redact"
+description = "Redaction (architecture §11.2): marks, apply (glyphs, images, vectors, XObjects, annotations, fields), verification"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+aho-corasick = "1"
+easypdf-cos = { workspace = true }
+easypdf-content = { workspace = true }
+easypdf-fonts = { workspace = true }
+easypdf-model = { workspace = true }
+easypdf-forms = { workspace = true }
+easypdf-edit = { workspace = true }
+easypdf-annot = { workspace = true }
+easypdf-xfa = { workspace = true }
+# CCITT Group 4 and JBIG2 encoding for cleared one-bit images.
+easypdf-filters = { workspace = true }
+thiserror = { workspace = true }
+sha2 = "0.11"
+
+[dev-dependencies]
+easypdf-testkit = { workspace = true }
+# The redacted page is rendered in `tests::a_page_whose_pruned_pattern_is_still_selected_renders`:
+# layer 3 from layer 4, a dev dependency only.
+easypdf-render = { workspace = true }

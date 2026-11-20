@@ -1,0 +1,48 @@
+name: easypdf-0190-staging
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: easypdf
+      MARIADB_USER: easypdf
+      MARIADB_PASSWORD: easypdf-local
+      MARIADB_ROOT_PASSWORD: easypdf-root-local
+    volumes:
+      - easypdf-db:/var/lib/mysql
+      - ./web-portal/database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8385:80"
+    environment:
+      APP_ENV: development
+      APP_URL: http://localhost:8385
+      APP_SECRET: local-development-secret-change-before-production
+      OPENAI_CLIENT_ID: ${OPENAI_CLIENT_ID:-}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: easypdf
+      DB_USER: easypdf
+      DB_PASSWORD: easypdf-local
+      EASYPDF_CLI: /opt/easypdf/bin/easypdf-cli
+      EASYPDF_STORAGE: /var/www/easypdf-storage
+      MAX_UPLOAD_MB: 200
+      TEST_PASSWORD: EasyPDF-Test-2026!
+    volumes:
+      - easypdf-storage:/var/www/easypdf-storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  easypdf-db:
+  easypdf-storage:
