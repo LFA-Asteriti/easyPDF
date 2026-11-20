@@ -35,7 +35,7 @@ fn the_exe_has_version_info_with_the_package_version() {
     for (key, value) in [
         ("ProductName", "easyPDF"),
         ("FileDescription", "easyPDF command-line tool"),
-        ("LegalCopyright", "Copyright (c) the easyPDF contributors. MIT OR Apache-2.0."),
+        ("LegalCopyright", "MIT OR Apache-2.0; third-party notices in NOTICE."),
         ("OriginalFilename", "easypdf-cli.exe"),
         ("InternalName", "easypdf-cli"),
         ("FileVersion", env!("CARGO_PKG_VERSION")),
