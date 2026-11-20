@@ -712,6 +712,7 @@ fn apply_internal_font_bundle(root: &Path, stage: &Path) -> Result<()> {
         "packaging/windows/test-font-notices.ps1",
         "packaging/windows/test-msi.ps1",
         "ATTRIBUTION.toml",
+        "LICENSES.toml",
         "NOTICE",
     ] {
         let bytes = read_bounded(&root.join(relative))?;

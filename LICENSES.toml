@@ -16,7 +16,133 @@ sha256 = "cd7032ea33b71427f188e34ffb4aee9d6868a57fd196037c5c8b2be03a2a0352"
 [[document]]
 source = "NOTICE"
 destination = "NOTICE"
-sha256 = "c1962ce267ea050f2c785f38ae09d18e17f86163c06b638bf318c6ad6a7014e9"
+sha256 = "199714cf704c9b72ecca3bc693855cfba531ac3cb79b536d396bfe9650f03752"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/biz-ud-mincho/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/biz-ud-mincho/OFL.txt"
+sha256 = "9c244a5edd2525aa4aa43dd714d7de00f3b3591a522d82d724db3644b5a95568"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/biz-ud-pgothic/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/biz-ud-pgothic/OFL.txt"
+sha256 = "062c81ae55b5ddd56c08331c8fe86598c1ef7f4453560c74706427a008b68534"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/lxgw-wenkai-lite/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/lxgw-wenkai-lite/OFL.txt"
+sha256 = "7752fbb4e6c855f73a57a30caac80f583115658c656e11383d741571ddfa8882"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/nanum-gothic/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/nanum-gothic/OFL.txt"
+sha256 = "6bca0c1a8c713fa5e703c5427a273ea736181c558312962569c28b4cb390fee3"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-arabic/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-arabic/OFL.txt"
+sha256 = "3b7e321615e412e5fbb9eab5bf1c0a4cb84c732d3d5a9e9e3822972d5fb70b97"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-bengali/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-bengali/OFL.txt"
+sha256 = "c7c641f2b8bc47cecc96e3a7c3ba44c098d4d31505b42aa09f2a3f25de57c448"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-cjk-sc/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-cjk-sc/OFL.txt"
+sha256 = "88f117575237307bdd86a17ef15e21790fc9a662fe4dfb103ca1ca077f0d9982"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-devanagari/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-devanagari/OFL.txt"
+sha256 = "41221cfdd268fa8e338829cccec0526e0200a0ce9e0bc3c627254c12a99d3a98"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-georgian/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-georgian/OFL.txt"
+sha256 = "2c9d69cc13d29394783a99d12a823fd6bc4b2069e6ce795a5515ae187e858da7"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-gujarati/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-gujarati/OFL.txt"
+sha256 = "6873661146da1beb97a378ed3e3a509ebb6f65fcd095655eeff2f60d591c0bdc"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-gurmukhi/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-gurmukhi/OFL.txt"
+sha256 = "913bb62073cec207e71c3735cf40d3d034d4e3756f54493bfd2182ae29d634ce"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-hebrew/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-hebrew/OFL.txt"
+sha256 = "1acb8a4cf8e3d441eb573174faab52139071fee5cfa5e3e3f148becf90a54631"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-kannada/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-kannada/OFL.txt"
+sha256 = "fcb1a0a14352eb3afb14f26457c36842e9c2ddcd76a5be1151e44e16c0c7956e"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-malayalam/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-malayalam/OFL.txt"
+sha256 = "9526d417125acbf664f39a70ef0cba12a04f4ec73802d96d34c97af62990b386"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-oriya/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-oriya/OFL.txt"
+sha256 = "fe17b9f037f58c30c54a7a7850b27f0e9b0f948a6b4460028df3d23e1a09894a"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-symbols-2/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-symbols-2/OFL.txt"
+sha256 = "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-symbols/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-symbols/OFL.txt"
+sha256 = "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-tamil/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-tamil/OFL.txt"
+sha256 = "0e968b3ccaad38335875e7bd11bd470c77632303f8fe15b739c0d548c04571d5"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-telugu/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-telugu/OFL.txt"
+sha256 = "7f1924eb2376e2d8d143993928a8c73b732dfcfcafebcd695e3b8f8538b5b639"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/noto-sans-thai/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/noto-sans-thai/OFL.txt"
+sha256 = "0e4067898723c9acddf967edda99a5ed2088cd857a8e9949084f609358efe38a"
+
+[[document]]
+source = "assets/easypdf-fonts/fonts/shippori-mincho/OFL.txt"
+licences = ["OFL-1.1"]
+destination = "assets/easypdf-fonts/fonts/shippori-mincho/OFL.txt"
+sha256 = "0aef534f5885c2f30b360ed5fb09ea4661a40ec62845c35f8354e26d7977d87d"
 
 [[document]]
 source = "assets/LICENSE-easyPDF-brand.txt"
