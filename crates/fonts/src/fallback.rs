@@ -19,15 +19,15 @@
 //! 1. The document embeds the program. Nothing is substituted.
 //! 2. `/BaseFont` names one of the standard 14 (or a well-known alias such as Arial). Exact
 //!    published metrics apply, so this is as close to right as a substitution gets.
-//! 3. craft-fonts holds that exact family. Never another family — see [`crate::embedding`].
-//! 4. The descendant font's `/CIDSystemInfo /Ordering` names a script, and craft-fonts has a face
+//! 3. easyPDF font bundle holds that exact family. Never another family — see [`crate::embedding`].
+//! 4. The descendant font's `/CIDSystemInfo /Ordering` names a script, and easyPDF font bundle has a face
 //!    for it. Today that means Adobe-Japan1.
 //! 5. The ordering names a script we have **no** licensed face for (GB1, CNS1, Korea1). There is
 //!    no honest substitute, so the chain reports none: the caller draws nothing and can say why.
 //! 6. Otherwise, the nearest of the standard 14 by `/FontDescriptor /Flags` — serif, fixed pitch,
 //!    bold and italic. This step always succeeds, so a simple font is never left without a face.
 
-use crate::{CraftFont, Std14};
+use crate::{EasyPdfFont, Std14};
 
 /// What a font dictionary asks for, as far as the dictionary alone can say.
 #[derive(Clone, Copy, Debug, Default)]
@@ -44,7 +44,7 @@ pub struct Request<'a> {
 
 /// The face the chain picked.
 ///
-/// `Debug`, `PartialEq` and `Eq` are written by hand rather than derived, because [`CraftFont`]
+/// `Debug`, `PartialEq` and `Eq` are written by hand rather than derived, because [`EasyPdfFont`]
 /// carries a whole font program: deriving would print megabytes and compare font files.
 #[derive(Clone, Copy)]
 pub enum Face {
@@ -52,8 +52,8 @@ pub enum Face {
     Embedded,
     /// One of the standard 14, whose metrics are exact.
     Standard14(Std14),
-    /// A face from the optional craft-fonts build input.
-    Craft(&'static CraftFont),
+    /// A face from the optional easyPDF font bundle build input.
+    Craft(&'static EasyPdfFont),
     /// No face at all. The caller must draw nothing rather than draw the wrong glyphs.
     None,
 }
@@ -63,7 +63,7 @@ impl PartialEq for Face {
         match (self, other) {
             (Self::Embedded, Self::Embedded) | (Self::None, Self::None) => true,
             (Self::Standard14(a), Self::Standard14(b)) => a == b,
-            // craft-fonts entries are unique statics, so identity is the comparison that means
+            // easyPDF font bundle entries are unique statics, so identity is the comparison that means
             // what we want: two styles of one family are different faces and must not be equal.
             (Self::Craft(a), Self::Craft(b)) => std::ptr::eq(*a, *b),
             _ => false,
@@ -95,9 +95,9 @@ pub enum Why {
     /// `/BaseFont` is otherwise unknown, but its name hints at a family ("Serif", "Roman",
     /// "Mono"). A guess from the name, and reported as one.
     NameHintedStandard14,
-    /// craft-fonts holds this exact family.
+    /// easyPDF font bundle holds this exact family.
     ExactCraftFamily,
-    /// A craft-fonts face for the script named by `/CIDSystemInfo /Ordering`.
+    /// A easyPDF font bundle face for the script named by `/CIDSystemInfo /Ordering`.
     ScriptFace,
     /// The ordering names a script with no licensed face available.
     NoFaceForScript,
@@ -149,14 +149,14 @@ impl Substitution {
     }
 }
 
-/// CID orderings we recognise, and whether a craft-fonts face may exist for them.
+/// CID orderings we recognise, and whether a easyPDF font bundle face may exist for them.
 ///
 /// `Identity` is not a script: it says the codes are glyph ids, so it tells us nothing about
 /// which face would suit and the chain falls through to the flags.
 fn script_for(ordering: &str) -> Option<&'static str> {
     match ordering {
         "Japan1" => Some("Jpan"),
-        // Registered orderings the chain maps to no craft-fonts face.
+        // Registered orderings the chain maps to no easyPDF font bundle face.
         "GB1" | "CNS1" | "Korea1" | "KR" => Some(""),
         _ => None,
     }
@@ -181,7 +181,7 @@ pub fn substitute(req: &Request<'_>) -> Substitution {
     }
     if let Some(script) = req.ordering.and_then(script_for) {
         // A script we hold a face for; otherwise there is no honest substitute to offer.
-        return match crate::CRAFT_FONTS.iter().find(|f| f.covers(script)) {
+        return match crate::EASYPDF_FONTS.iter().find(|f| f.covers(script)) {
             Some(f) => at(Face::Craft(f), Why::ScriptFace),
             None => at(Face::None, Why::NoFaceForScript),
         };
@@ -315,11 +315,11 @@ mod tests {
     }
 
     #[test]
-    fn japanese_depends_on_craft_fonts_and_says_which_it_got() {
-        // craft-fonts is an optional build input, so both outcomes are correct -- but they must be
+    fn japanese_depends_on_easypdf_fonts_and_says_which_it_got() {
+        // easyPDF font bundle is an optional build input, so both outcomes are correct -- but they must be
         // distinguishable, and neither may be a silent Latin stand-in.
         let s = substitute(&req("SomeJapaneseFont", false, 0, Some("Japan1")));
-        if crate::CRAFT_FONTS.iter().any(|f| f.covers("Jpan")) {
+        if crate::EASYPDF_FONTS.iter().any(|f| f.covers("Jpan")) {
             assert_eq!(s.why, Why::ScriptFace);
             assert!(matches!(s.face, Face::Craft(_)));
             assert!(s.face_name().is_some_and(|n| !n.is_empty()));

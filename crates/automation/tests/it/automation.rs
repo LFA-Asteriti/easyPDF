@@ -754,7 +754,7 @@ fn explicit_font_and_disjoint_ranges_save_reopen_through_tools() {
 #[test]
 fn added_arabic_text_keeps_copy_search_and_editor_order_after_retyping_and_reopen() {
     if easypdf_fonts::document_arabic_font().is_none() {
-        eprintln!("set CRAFT_FONTS_DIR to exercise added Arabic text");
+        eprintln!("set assets/easypdf-fonts to exercise added Arabic text");
         return;
     }
     let dir = workdir("arabic-copy-order");
@@ -3575,7 +3575,7 @@ fn superscript_and_subscript_through_tools() {
 #[test]
 fn styled_cyrillic_fallback_is_batched_through_tools_and_reopen() {
     if easypdf_fonts::document_japanese_font().is_none() {
-        eprintln!("skipping: built without craft-fonts");
+        eprintln!("skipping: built without easyPDF font bundle");
         return;
     }
     let dir = workdir("styled-fallback");
@@ -3610,8 +3610,8 @@ fn styled_cyrillic_fallback_is_batched_through_tools_and_reopen() {
 }
 
 /// #2593: a paragraph whose own font cannot show a character is written from easyPDF's fallback
-/// faces. The Cyrillic the craft-fonts faces lack (Uzbek қ ғ ҳ, Kazakh ә ө ү ұ һ) comes from the
-/// bundled Inter face, so the edit is not refused even without `CRAFT_FONTS_DIR`, and the words
+/// faces. The Cyrillic the easyPDF font bundle faces lack (Uzbek қ ғ ҳ, Kazakh ә ө ү ұ һ) comes from the
+/// bundled Inter face, so the edit is not refused even without `assets/easypdf-fonts`, and the words
 /// survive a save and a reopen. (`crates/edit/src/tests.rs::uzbek_and_kazakh_cyrillic_use_the_bundled_latin_face`
 /// pins which face drew them.)
 #[test]

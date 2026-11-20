@@ -20,7 +20,7 @@ An **asset** is any non-code material that the project includes, ships, embeds, 
 
 - **Never** use icons, images, artwork, logos, UI graphics, fonts, stamps, cursors, sample documents or any other asset taken from an Adobe product, installer, website, document or package.
   - "Adobe product" includes Acrobat, Reader, Photoshop, Illustrator, Premiere, Lightroom and Creative Cloud, including the fonts they install (for example Minion, Myriad, Kozuka and the Adobe CJK families).
-  - This holds even when Adobe publishes the material under an open licence, if it is **visual design**. For example, **do not** use Source Han, Source Serif or Source Sans, or Noto CJK, which is Source Han rebranded.
+  - This holds even when Adobe publishes the material under an open licence, if it is **visual design**. For example, **do not** use Source Han, Source Serif or Source Sans. The owner explicitly approved the independently distributed OFL `Noto Sans CJK SC` and `LXGW WenKai Lite` files recorded in `assets/easypdf-fonts` on 2026-11-20; no other Adobe-origin visual asset is allowed by that approval.
 - **Never** recreate, trace, redraw or closely imitate an Adobe icon or graphic. Our icons come from Lucide, and our visual design is our own.
 - Screenshots of Adobe software exist only as private, local observation notes under `plan/acrobat/`, which is gitignored. They must **never** be committed, published, linked, shown in docs, used as a design source to trace, or placed anywhere else in the repository or its outputs.
 - The only Adobe-authored material allowed is **non-visual technical data** that is openly licensed and required for PDF compatibility. Each item needs its own entry in `ATTRIBUTION.toml` with `adobe_data = true`, and the list below is closed:
@@ -66,15 +66,17 @@ Anything else is forbidden, including assets whose licence you cannot prove from
   - an image, icon or font names Adobe as author or source.
 - **`cargo xtask demo-pdf`** downloads its fonts only from `ATTRIBUTION.toml` entries, pinned by SHA-256. Afterwards it **fails if the PDF embeds any font not in its allowlist**, which catches the browser silently falling back to a system font.
 
-### 1.4 Fonts live in craft-fonts
+### 1.4 Fonts are self-contained in easyPDF
 
-- Font assets shared through the optional [`craft-fonts`](https://github.com/storytold/craft-fonts) build input, including every Japanese font, live outside this repository. **Never commit a font file to this repository**; add it to craft-fonts instead. (The Latin UI fonts already in `assets/fonts/` — Inter, JetBrains Mono, Dancing Script — stay.)
-- craft-fonts is an **optional build input**, never a Cargo dependency: `CRAFT_FONTS_DIR=<checkout> cargo build` makes `crates/fonts/build.rs` embed its fonts as `easypdf_fonts::CRAFT_FONTS`. Without it easyPDF builds, tests and runs, but has no Japanese face (Japanese UI text shows replacement boxes, and writing Japanese into a PDF returns a clear error). Release builds always set it (`.github/workflows/release.yml`), and `ATTRIBUTION.toml` lists it as a `[[build_input]]`.
+- Every non-system font shipped by easyPDF lives in this repository. The multilingual bundle is under `assets/easypdf-fonts/`; the Latin UI fonts remain under `assets/fonts/`.
+- `crates/fonts/build.rs` reads only `assets/easypdf-fonts/fonts/manifest.txt`. Builds, tests, Docker images and releases must never clone or download a font repository and must not depend on a font-related environment variable.
+- Add only fonts that easyPDF actually uses. Each binary and licence file must have its own `ATTRIBUTION.toml` entry and verified SHA-256. Do not add replacement or experimental faces that are absent from the manifest.
+- The owner explicitly authorised this self-contained policy and the storage of all 22 audited font binaries, including active `Noto Sans CJK SC` and reserve `LXGW WenKai Lite`, on 2026-11-20. Only fonts listed in the manifest are embedded. This does not relax the remaining asset or attribution rules.
 - The desktop app may read one font **already installed on the user's machine** at runtime, as the last interface fallback for characters no embedded face has (`crates/ui-egui/src/system_fonts.rs`). That font is never embedded, shipped, committed or copied, and never appears in published screenshots (`EASYPDF_SYSTEM_FONTS=0`, which `cargo xtask screenshots` sets). It is not a way around §1.2: nothing from it may enter a PDF, a package or the repository.
 
 ### 1.5 Procedure for adding or changing an asset
 
-Fonts go to craft-fonts instead (§1.4).
+Fonts go to `assets/easypdf-fonts` and follow §1.4.
 
 1. Find an asset under an allowed licence from its **original source**: the author's repository or a release, not a random mirror. Record the exact version or commit.
 2. Confirm the authorship. It must not be Adobe (§1.1). Keep the licence text.

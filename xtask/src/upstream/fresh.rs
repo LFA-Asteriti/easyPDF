@@ -425,7 +425,7 @@ pub(super) fn run(root: &Path, args: &[String]) -> Result<()> {
     apply_web_host(root, &stage, release, &backup_release)?;
     apply_ui_branding(&stage)?;
     apply_visible_branding(&stage)?;
-    apply_font_policy(&stage)?;
+    apply_internal_font_bundle(root, &stage)?;
     cover::apply(root, &stage, &backup_release)?;
     cover_ui::apply(root, &stage, &backup_release)?;
     disable_unapproved_update_channel(&stage)?;
@@ -692,31 +692,80 @@ fn apply_brand_package_files(root: &Path, stage: &Path) -> Result<usize> {
     Ok(FILES.len())
 }
 
-fn apply_font_policy(stage: &Path) -> Result<()> {
-    // Keep new upstream font-size/script handling, but never package Adobe-origin designs.
-    // Exact anchors force review if a future release reorganises this build path.
-    let scripts = stage.join("crates/fonts/src/cjk_scripts.rs");
-    replace_exact_once(
-        &scripts,
-        "pub const WHOLE_CJK_FAMILIES: [&str; 3] = [\"Shippori Mincho\", \"BIZ UDPGothic\", \"BIZ UDMincho\"];",
-        "pub const WHOLE_CJK_FAMILIES: [&str; 3] = [\"Shippori Mincho\", \"BIZ UDPGothic\", \"BIZ UDMincho\"];\n\n/// Adobe-origin type designs forbidden by AGENTS.md, regardless of size or licence.\npub const BARRED_FAMILIES: [&str; 5] = [\"Source Han\", \"Source Serif\", \"Source Sans\", \"Noto Sans CJK\", \"Noto Serif CJK\"];\n\n/// A prefix also covers region and style suffixes in the optional font manifest.\npub fn is_barred_family(family: &str) -> bool {\n    BARRED_FAMILIES.iter().any(|prefix| family.starts_with(prefix))\n}",
-    )?;
-    replace_exact_once(
-        &scripts,
-        "pub fn cjk_size_decision(family: &str, bytes: u64, wasm: bool, required: bool) -> CjkSizeDecision {\n    if WHOLE_CJK_FAMILIES.contains(&family) {",
-        "pub fn cjk_size_decision(family: &str, bytes: u64, wasm: bool, required: bool) -> CjkSizeDecision {\n    if is_barred_family(family) {\n        return CjkSizeDecision::Skip;\n    }\n    if WHOLE_CJK_FAMILIES.contains(&family) {",
-    )?;
-    replace_exact_once(
-        &scripts,
-        "mod tests {\n    use super::*;\n",
-        "mod tests {\n    use super::*;\n\n    #[test]\n    fn adobe_origin_families_never_pass_the_font_size_gate() {\n        for family in [\"Source Han Sans\", \"Source Serif 4\", \"Source Sans 3\", \"Noto Sans CJK SC\", \"Noto Serif CJK JP\"] {\n            assert_eq!(cjk_size_decision(family, 1024, false, false), CjkSizeDecision::Skip, \"{family}\");\n        }\n        assert!(!is_barred_family(\"BIZ UDPGothic\"));\n        assert!(!is_barred_family(\"LXGW WenKai Lite\"));\n    }\n",
-    )?;
-    let build = stage.join("crates/fonts/build.rs");
-    replace_exact_once(
-        &build,
-        "        let [family, style, file, scripts, ..] = f.as_slice() else {\n            return Err(format!(\"malformed manifest line: {line}\"));\n        };",
-        "        let [family, style, file, scripts, ..] = f.as_slice() else {\n            return Err(format!(\"malformed manifest line: {line}\"));\n        };\n        if cjk_scripts::is_barred_family(family) {\n            println!(\"cargo::warning=craft-fonts: not embedding {family} {style} (AGENTS.md section 1.1)\");\n            continue;\n        }",
-    )?;
+fn apply_internal_font_bundle(root: &Path, stage: &Path) -> Result<()> {
+    copy_tree(&root.join("assets/easypdf-fonts"), &stage.join("assets/easypdf-fonts"))?;
+
+    // These files are the reviewed easyPDF font boundary. Keeping the list explicit makes a new
+    // upstream release stop for review when its font integration moves instead of silently
+    // retaining a repository checkout or an obsolete optional-input path.
+    for relative in [
+        "crates/fonts/build.rs",
+        "crates/fonts/src/cjk_scripts.rs",
+        "crates/fonts/src/easypdf_fonts.rs",
+        "Dockerfile",
+        ".github/workflows/ci.yml",
+        ".github/workflows/freebsd.yml",
+        ".github/workflows/release.yml",
+        "packaging/env.sh",
+        "packaging/windows/font-notices.ps1",
+        "packaging/windows/package.ps1",
+        "packaging/windows/test-font-notices.ps1",
+        "packaging/windows/test-msi.ps1",
+        "ATTRIBUTION.toml",
+        "NOTICE",
+    ] {
+        let bytes = read_bounded(&root.join(relative))?;
+        atomic_write(&stage.join(relative), &bytes)?;
+    }
+
+    rewrite_font_identifiers(&stage.join("crates"))?;
+    replace_exact_once(&stage.join("crates/fonts/src/lib.rs"), "mod craft;", "mod easypdf_fonts;")?;
+    replace_exact_once(&stage.join("crates/fonts/src/lib.rs"), "pub use craft::{", "pub use easypdf_fonts::{")?;
+    let legacy_module = stage.join("crates/fonts/src/craft.rs");
+    if legacy_module.exists() {
+        std::fs::remove_file(&legacy_module).with_context(|| format!("remove legacy font module {}", legacy_module.display()))?;
+    }
+    Ok(())
+}
+
+fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
+    if !source.is_dir() {
+        bail!("internal easyPDF font directory is missing: {}", source.display());
+    }
+    for entry in std::fs::read_dir(source).with_context(|| format!("read {}", source.display()))? {
+        let entry = entry.with_context(|| format!("read entry in {}", source.display()))?;
+        let target = destination.join(entry.file_name());
+        if entry.file_type().with_context(|| format!("read type of {}", entry.path().display()))?.is_dir() {
+            copy_tree(&entry.path(), &target)?;
+        } else {
+            atomic_write(&target, &read_bounded(&entry.path())?)?;
+        }
+    }
+    Ok(())
+}
+
+fn rewrite_font_identifiers(path: &Path) -> Result<()> {
+    for entry in std::fs::read_dir(path).with_context(|| format!("read {}", path.display()))? {
+        let entry = entry.with_context(|| format!("read entry in {}", path.display()))?;
+        let child = entry.path();
+        if entry.file_type().with_context(|| format!("read type of {}", child.display()))?.is_dir() {
+            rewrite_font_identifiers(&child)?;
+            continue;
+        }
+        if child.extension().and_then(|value| value.to_str()) != Some("rs") {
+            continue;
+        }
+        let original = read_bounded(&child)?;
+        let text = String::from_utf8(original.clone()).with_context(|| format!("decode {}", child.display()))?;
+        let updated = text
+            .replace("CRAFT_FONTS", "EASYPDF_FONTS")
+            .replace("CraftFont", "EasyPdfFont")
+            .replace("craft_fonts", "easypdf_fonts")
+            .replace("craft_glyph", "bundled_glyph");
+        if updated.as_bytes() != original {
+            atomic_write(&child, updated.as_bytes())?;
+        }
+    }
     Ok(())
 }
 

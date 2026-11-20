@@ -384,13 +384,13 @@ fn signature_appearance_labels_keep_their_separator() {
     }
 }
 
-/// With craft-fonts, every Japanese translation has glyphs: with all interface faces (desktop)
+/// With easyPDF font bundle, every Japanese translation has glyphs: with all interface faces (desktop)
 /// and with BIZ UDPGothic Regular alone (the web build's only Japanese face).
 #[test]
 fn japanese_labels_have_glyphs() {
     let craft = easypdf_fonts::ui_japanese_fonts();
     let Some(web) = craft.iter().find(|f| f.family == "BIZ UDPGothic" && f.style == "Regular") else {
-        eprintln!("skipping Japanese glyph checks: build with CRAFT_FONTS_DIR to run them");
+        eprintln!("skipping Japanese glyph checks: build with assets/easypdf-fonts to run them");
         return;
     };
     needs_catalogs!();
@@ -398,7 +398,7 @@ fn japanese_labels_have_glyphs() {
     let web_name = web.name();
     let mut web_only = crate::theme::font_definitions();
     for family in web_only.families.values_mut() {
-        family.retain(|name| !easypdf_fonts::CRAFT_FONTS.iter().any(|face| face.name() == *name) || *name == web_name);
+        family.retain(|name| !easypdf_fonts::EASYPDF_FONTS.iter().any(|face| face.name() == *name) || *name == web_name);
     }
     use egui::epaint::text::{Fonts, TextOptions};
     for (build, defs) in [("desktop", crate::theme::font_definitions()), ("web", web_only)] {
@@ -774,14 +774,14 @@ fn contextual_labels_fall_back_to_the_plain_translation() {
     assert_eq!(tr_ctx(es, "no such context", "Type"), tr(es, "Type"));
 }
 
-/// With a craft-fonts Telugu face, every Telugu translation has glyphs: with all interface
-/// faces (desktop) and with the Telugu face as the only craft-fonts face (the web build keeps
+/// With a easyPDF font bundle Telugu face, every Telugu translation has glyphs: with all interface
+/// faces (desktop) and with the Telugu face as the only easyPDF font bundle face (the web build keeps
 /// it; Telugu labels must not need a Japanese or Arabic face).
 #[test]
 fn telugu_labels_have_glyphs() {
     let telugu: Vec<String> = easypdf_fonts::ui_telugu_fonts().iter().map(|f| f.name()).collect();
     if telugu.is_empty() {
-        eprintln!("skipping Telugu glyph checks: build with CRAFT_FONTS_DIR and a Telugu face to run them");
+        eprintln!("skipping Telugu glyph checks: build with assets/easypdf-fonts and a Telugu face to run them");
         return;
     }
     needs_catalogs!();
@@ -789,7 +789,7 @@ fn telugu_labels_have_glyphs() {
     let labels: String = translations("te").chars().chain(te.name().chars()).filter(|c| !c.is_control()).collect();
     let mut telugu_only = crate::theme::font_definitions();
     for family in telugu_only.families.values_mut() {
-        family.retain(|name| !easypdf_fonts::CRAFT_FONTS.iter().any(|face| face.name() == *name) || telugu.contains(name));
+        family.retain(|name| !easypdf_fonts::EASYPDF_FONTS.iter().any(|face| face.name() == *name) || telugu.contains(name));
     }
     use egui::epaint::text::{Fonts, TextOptions};
     for (build, defs) in [("all faces", crate::theme::font_definitions()), ("Telugu face only", telugu_only)] {
@@ -1355,14 +1355,14 @@ fn plural_fixture(code: &'static str, forms: usize) -> impl Fn(u64) -> usize {
     }
 }
 
-/// With a craft-fonts Arabic face, every Arabic translation has glyphs: with all interface
-/// faces (desktop) and with the Arabic face as the only craft-fonts face (the web build keeps
+/// With a easyPDF font bundle Arabic face, every Arabic translation has glyphs: with all interface
+/// faces (desktop) and with the Arabic face as the only easyPDF font bundle face (the web build keeps
 /// it; Arabic labels must not need a Japanese face).
 #[test]
 fn arabic_labels_have_glyphs() {
     let faces: Vec<String> = easypdf_fonts::ui_arabic_fonts().iter().map(|f| f.name()).collect();
     if faces.is_empty() {
-        eprintln!("skipping Arabic glyph checks: build with CRAFT_FONTS_DIR and an Arabic face to run them");
+        eprintln!("skipping Arabic glyph checks: build with assets/easypdf-fonts and an Arabic face to run them");
         return;
     }
     needs_catalogs!();
@@ -1370,7 +1370,7 @@ fn arabic_labels_have_glyphs() {
     let labels: String = translations("ar").chars().chain(ar.name().chars()).filter(|c| !c.is_control()).collect();
     let mut arabic_only = crate::theme::font_definitions();
     for family in arabic_only.families.values_mut() {
-        family.retain(|name| !easypdf_fonts::CRAFT_FONTS.iter().any(|face| face.name() == *name) || faces.contains(name));
+        family.retain(|name| !easypdf_fonts::EASYPDF_FONTS.iter().any(|face| face.name() == *name) || faces.contains(name));
     }
     use egui::epaint::text::{Fonts, TextOptions};
     for (build, defs) in [("all faces", crate::theme::font_definitions()), ("Arabic face only", arabic_only)] {

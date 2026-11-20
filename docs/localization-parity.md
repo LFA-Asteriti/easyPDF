@@ -1,7 +1,7 @@
 # Localization parity
 
 > **Last reviewed:** 2026-11-03 · **Last updated:** 2026-11-03 · **Change:** minor (Turkish: 2,867 entries, 0 missing in `cargo xtask i18n-report` on 2026-11-03; AI-assisted)
-> **Last reviewed:** 2026-10-25 · **Last updated:** 2026-10-25 · **Change:** minor (Persian (`fa`, 2,785 entries) added right-to-left like Arabic and Kurdish; Arabic current state corrected: catalogs stay logical, RTL labels take an explicit direction and stock chrome mirrors; native/browser RTL input, IME and complex workflows remain unqualified. Native release Hans face via LXGW WenKai Lite; release-pinned craft-fonts still has no Telugu face. Current union 2,798 keys. Scores and estimates unchanged) · **Target:** Adobe Acrobat Pro (Acrobat DC, continuous track 26.002.21931, macOS)
+> **Last reviewed:** 2026-11-20 · **Last updated:** 2026-11-20 · **Change:** minor (all 22 multilingual font binaries are now internal; native Hans uses Noto Sans CJK SC, LXGW WenKai Lite is an inactive reserve, and Telugu is bundled; compact web payload unchanged) · **Target:** Adobe Acrobat Pro (Acrobat DC, continuous track 26.002.21931, macOS)
 
 Per-language status of easyPDF's interface against Acrobat Pro's. How translations work and how to
 add a language: [localization.md](localization.md). Summary in [ROADMAP.md](../ROADMAP.md).
@@ -35,16 +35,16 @@ add a language: [localization.md](localization.md). Summary in [ROADMAP.md](../R
 | Language | Code | UI strings translated | Dialogs / tooltips / help | Script support | Native review | Status | Acrobat ships it | To `full` (h) |
 |---|---|---|---|---|---|---|---|---|
 | English | `en` | built in (100%) | all; README and docs | Latin | yes | **full** | yes | 0 |
-| Simplified Chinese | `zh-hans` | 2,088 (97.4%) | dialogs and tooltips through `tl!`; no help | CJK text and IME work; native craft-fonts builds embed the **LXGW WenKai Lite** Hans face, while the web build has no Hans face beyond BIZ UDPGothic, and missing-glyph reports (#826, #688, #728, #758; Flatpak #689) predate the native face | no | partial | yes | 6–12 |
+| Simplified Chinese | `zh-hans` | 2,088 (97.4%) | dialogs and tooltips through `tl!`; no help | CJK text and IME work; native easyPDF builds embed **Noto Sans CJK SC**, **LXGW WenKai Lite** is stored as an inactive reserve, and the compact web payload has no dedicated Hans face beyond BIZ UDPGothic | no | partial | yes | 6–12 |
 | Spanish | `es` | 2,798 (100% of current key union) | dialogs and tooltips; no help | Latin | no | partial | yes | 2–4 |
-| Hindi | `hi` | 0 | none | Devanagari not tested (egui shapes Telugu conjuncts, so shaping is likely workable); the pinned craft-fonts manifest has Noto Sans Devanagari Regular; rendering remains unqualified | no | none | no | 10–18 |
+| Hindi | `hi` | 0 | none | Devanagari not tested (egui shapes Telugu conjuncts, so shaping is likely workable); the pinned easyPDF font bundle manifest has Noto Sans Devanagari Regular; rendering remains unqualified | no | none | no | 10–18 |
 | Arabic | `ar` | 2,143 (100%) | dialogs and tooltips; no help | Logical-order catalog; egui 0.37's epaint reorders with UAX #9, Arabic, Kurdish and Persian labels use an explicit right-to-left paragraph direction, and stock chrome is mirrored. Native/browser RTL input and IME, and complex bidirectional workflows, are not yet qualified (`localization.md` §Arabic) | no | partial | yes (Middle East edition) | 25–45 |
 | French | `fr` | 2,128 (99.3%) | dialogs and tooltips; no help | Latin | no | partial | yes | 1–2 |
 | Portuguese (Brazil) | `pt-br` | 2,798 (100% of current union) | dialogs and tooltips; no help | Latin | community (#288) | partial | yes | 1–2 |
 | Indonesian | `id` | 0 | none | Latin | no | none | no | 3–5 |
-| Japanese | `ja` | 2,123 (99.1%) | dialogs and tooltips; no help | BIZ UDPGothic from craft-fonts; IME patched on macOS, Windows, X11, Wayland; vertical text renders but can't be edited | no | partial | yes | 4–8 |
+| Japanese | `ja` | 2,123 (99.1%) | dialogs and tooltips; no help | BIZ UDPGothic from easyPDF font bundle; IME patched on macOS, Windows, X11, Wayland; vertical text renders but can't be edited | no | partial | yes | 4–8 |
 | German | `de` | 2,128 (99.3%) | dialogs and tooltips; no help | Latin | community, in progress (#828: terminology, clipping) | partial | yes | 2–4 |
-| Korean | `ko` | 0 | none | Hangul IME patched (Microsoft and Apple Korean, `vendor/README.md` winit 3, 6, 9, 10); no Hangul UI face in craft-fonts | no | none | yes | 6–10 |
+| Korean | `ko` | 0 | none | Hangul IME patched (Microsoft and Apple Korean, `vendor/README.md` winit 3, 6, 9, 10); no Hangul UI face in easyPDF font bundle | no | none | yes | 6–10 |
 | Vietnamese | `vi` | 2,798 (100% of current key union) | dialogs and tooltips; no help | Latin with stacked diacritics; bundled Inter covers them (fonts test) | community | partial | no | 2–4 |
 
 **Localization dimension ≈ 68%**: the mean over the twelve, counting a catalog's percentage but only
@@ -65,7 +65,7 @@ help/docs polish (catalog and script work are already done), not missing UI stri
 | Russian | `ru` | 2,043 (95.3%) | partial | yes |
 | Bulgarian | `bg` | 2,094 (97.7%) | partial | no |
 | Czech | `cs` | 2,794 entries (all but four keys of the current union; the engine's sentences, weekdays and certificate fields) | partial | yes |
-| Telugu | `te` | 2,058 (96.0%) | partial (the release-pinned craft-fonts has no Telugu face yet) | no |
+| Telugu | `te` | 2,058 (96.0%) | Noto Sans Telugu is bundled internally and included in the compact web payload | no |
 | Hungarian | `hu` | 2,126 (99.2%) | partial | yes |
 | Ukrainian | `uk` | 2,142 (100%) | partial | yes |
 | Italian | `it` | 2,736 entries (all but 62 keys of the current union) | partial | yes |
@@ -90,7 +90,7 @@ Acrobat languages easyPDF lacks: Danish, Dutch, Swedish, Hebrew. Vietnamese is s
 
 | Date | Change | Summary |
 |---|---|---|
-| 2026-10-25 | minor | Arabic current state corrected: catalogs stay logical, Arabic/Kurdish labels take an explicit RTL direction, and stock chrome mirrors; native/browser RTL input, IME and complex workflows remain unqualified. Native Simplified Chinese uses LXGW WenKai Lite; the web build still has no Hans face and the release-pinned craft-fonts still has no Telugu face. Scores and estimates unchanged |
+| 2026-11-20 | minor | All 22 multilingual font binaries are now internal. Native Simplified Chinese uses Noto Sans CJK SC; LXGW WenKai Lite is an inactive reserve; Telugu is bundled; the compact web payload still has no dedicated Hans face. Scores and estimates unchanged. |
 | 2026-10-25 | minor | Added Persian (`fa`, 2,785 entries, all but 13 of the current 2,798-key union); right-to-left like Arabic and Kurdish, with logical entries reordered by egui 0.37's epaint; AI-assisted, not yet native-reviewed |
 | 2026-10-21 | minor | Brazilian Portuguese (`pt-br`) now covers all 2,674 distinct keys in the current catalog union; no help or engine/OS error-detail localization; twelve-language mean still rounds to ≈ 68% |
 | 2026-10-20 | minor | Spanish: the 143 keys the other catalogs had and `es.tsv` was missing; `es` now covers the whole 2,674-key union, like `lt` and `vi`. Restated Lithuanian against the current union (its 2,585 was measured on 2026-10-13) and said plainly in *How this was measured* that the union moves, so counts only compare within a date |

@@ -87,7 +87,7 @@ fn contextual_arabic_marks_ligatures_and_mixed_bidi_keep_logical_text_after_reop
         return;
     }
     let Some(font) = easypdf_fonts::document_arabic_font() else {
-        eprintln!("set CRAFT_FONTS_DIR to test full Arabic glyph programs");
+        eprintln!("set assets/easypdf-fonts to test full Arabic glyph programs");
         return;
     };
     if easypdf_fonts::embedding::validate(font.bytes).is_err() {

@@ -1,4 +1,4 @@
-//! pdfcraft-fonts — font metrics and encodings for generated appearances (L2).
+//! easyPDF fonts — font metrics and encodings for generated appearances (L2).
 //!
 //! Standard-14 advance widths are exact (`Std14`, ISO 32000-2 Annex D). What remains approximate
 //! is everything that needs a font *program*: this crate reads font dictionaries, never embedded
@@ -9,7 +9,7 @@
 
 #[cfg(test)]
 mod cjk_scripts;
-mod craft;
+mod easypdf_fonts;
 pub mod embedding;
 mod encodings;
 pub mod fallback;
@@ -20,14 +20,14 @@ mod shaping;
 pub mod source_shaping;
 mod std14;
 mod std14_metrics;
-pub use craft::{
-    CRAFT_FONTS, CraftFont, SHIPPORI_MINCHO, document_arabic_font, document_devanagari_font, document_hebrew_font, document_japanese_font,
+pub use easypdf_fonts::{
+    EASYPDF_FONTS, EasyPdfFont, SHIPPORI_MINCHO, document_arabic_font, document_devanagari_font, document_hebrew_font, document_japanese_font,
     document_japanese_font_for_style, document_japanese_fonts_for_style, document_latin_fonts, document_thai_font, ui_arabic_fonts, ui_chinese_fonts,
     ui_cjk_fonts, ui_devanagari_fonts, ui_hebrew_fonts, ui_japanese_fonts, ui_telugu_fonts, ui_thai_fonts,
 };
 pub use plan::{MAX_PLAN_GLYPHS, MAX_TYPE3_GLYPHS, PlannedType3, TextPlan};
 pub use script::{
-    GlyphError, GlyphOutline, INTER_REGULAR, MAX_SIGNATURE_CHARS, ScriptOutline, craft_glyph, face_has, japanese_glyph, japanese_glyph_from,
+    GlyphError, GlyphOutline, INTER_REGULAR, MAX_SIGNATURE_CHARS, ScriptOutline, bundled_glyph, face_has, japanese_glyph, japanese_glyph_from,
     script_missing, script_outline,
 };
 pub use shaping::{

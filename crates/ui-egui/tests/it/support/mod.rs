@@ -74,19 +74,13 @@ pub fn outside_menus<'h>(h: &'h Harness<'static, EasyPdfApp>, label: &str) -> eg
 
 /// Whether the test `name` must skip because the interface fonts lack a glyph for a character it
 /// draws: one in `text` or in the catalog of the interface `language`. egui 0.37 test harnesses
-/// panic on a missing glyph, and Japanese, Chinese and Thai faces come only from the optional
-/// craft-fonts build input or a face installed on this machine. Prints the skip line.
+/// panic on a missing glyph. All supported scripts must be covered by the internal easyPDF bundle.
 ///
 /// The fonts are those the app installs for `language` and for the default CJK preference: a
 /// switch to Chinese installs its fonts for the next frame, so the first frame in Chinese draws
 /// with the fonts of the language before it.
 ///
-/// A build that requires craft-fonts (`CRAFT_FONTS_REQUIRED=1`, as the CI gate sets) never skips:
-/// a missing glyph there is a failure.
 pub fn skip_without_glyphs(name: &str, language: &str, text: &str) -> bool {
-    if std::env::var("CRAFT_FONTS_REQUIRED").as_deref() == Ok("1") {
-        return false;
-    }
     let catalogs: Vec<&str> = i18n::Lang::from_code(language).into_iter().flat_map(i18n::Lang::catalog_texts).collect();
     let translations = catalogs.iter().flat_map(|c| c.lines()).filter(|l| !l.starts_with('#')).filter_map(|l| l.split('\t').nth(2));
     let chars: BTreeSet<char> = std::iter::once(text).chain(translations).flat_map(str::chars).filter(|c| !c.is_control()).collect();
@@ -97,11 +91,8 @@ pub fn skip_without_glyphs(name: &str, language: &str, text: &str) -> bool {
         let mut fonts = Fonts::new(TextOptions::default(), defs);
         chars.iter().copied().find(|c| families.iter().any(|id| !fonts.has_glyphs(id, &c.to_string())))
     });
-    let Some(missing) = missing else {
-        return false;
-    };
-    eprintln!("skipping {name}: no interface font draws {missing:?} (set CRAFT_FONTS_DIR to a craft-fonts checkout with a face for it)");
-    true
+    assert!(missing.is_none(), "{name}: internal easyPDF fonts do not draw {missing:?}");
+    false
 }
 
 /// Whether `name` is skipped because the build embeds no craft-i18n catalogs (English only).

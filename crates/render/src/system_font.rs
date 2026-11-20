@@ -3,7 +3,7 @@
 //! Acrobat and other tools often write Chinese, Japanese or Korean text with one of the Adobe
 //! collections (Adobe-Japan1, GB1, CNS1, Korea1) and a font name such as `KozGoPr6N-Medium` or
 //! `MSung-Light` without embedding the font. hayro maps those CIDs to Unicode itself, but it needs
-//! a face to draw them with; without one the text is blank. The craft-fonts Japanese faces come
+//! a face to draw them with; without one the text is blank. The easyPDF font bundle Japanese faces come
 //! first (see `japanese_fallback` in `raster.rs`); this module is the last resort: one face
 //! already installed on this machine, used for the viewer only (`RenderConfig::system_fonts`, off
 //! for exports, printing and OCR). It is read at runtime and never embedded or shipped

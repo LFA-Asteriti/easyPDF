@@ -422,7 +422,7 @@ Attribution and assets in the first green PR:
 - add `egui-icons.ttf`, SHA-256 `122806555c73df7cef55aa1d945289ae27fbc4dbbd31abbb4204ee0cda829cc8`, recorded as the MIT-licensed `emoji-icon-font` subset by John Slegers, with its exact usage;
 - run `cargo xtask assets --write` and then `cargo xtask assets`.
 
-Adopt E14 for fallbacks: set `FontTweak::fallback_align = FallbackAlign::Baseline` for script fallbacks; remove metric-derived `y_offset_factor`; keep Windows JetBrains Mono hinting. Add a glyph-coverage test for every UI literal and catalog translation with `MissingGlyphPolicy::Panic` (or `Fonts::has_glyphs`) for embedded-only, craft-fonts, each script fallback, and `EASYPDF_SYSTEM_FONTS=0/1`. A missing glyph is a failure, not a snapshot update.
+Adopt E14 for fallbacks: set `FontTweak::fallback_align = FallbackAlign::Baseline` for script fallbacks; remove metric-derived `y_offset_factor`; keep Windows JetBrains Mono hinting. Add a glyph-coverage test for every UI literal and catalog translation with `MissingGlyphPolicy::Panic` (or `Fonts::has_glyphs`) for embedded-only, easyPDF font bundle, each script fallback, and `EASYPDF_SYSTEM_FONTS=0/1`. A missing glyph is a failure, not a snapshot update.
 
 ### 6.6 Language and RTL
 
@@ -606,7 +606,7 @@ Include `crates/ui-egui/tests/it/control.rs`, its discarded-pass requests and `s
 | Control | `after_frames_counts_accepted_frames` | Forced discard does not answer early; answers after intended accepted frames |
 | Input | `unknown_wheel_source_keeps_wayland_fling` | `Unknown` + Point + End glides on Linux; `Trackpad`/`Momentum` policy covered; no `Finger`/`WheelTilt` |
 | Input | `one_finger_lift_glides_once` | Offset after 0.5 s follows `fling.rs`; egui kinetic adds no second document curve |
-| Fonts | `every_ui_string_has_all_glyphs` | All `tl!` literals and catalogs pass `MissingGlyphPolicy::Panic` for embedded + craft-fonts + system-font-off |
+| Fonts | `every_ui_string_has_all_glyphs` | All `tl!` literals and catalogs pass `MissingGlyphPolicy::Panic` for embedded + easyPDF font bundle + system-font-off |
 | Fonts | `fallback_rows_share_the_baseline` | Fallback baseline equals primary; row grows; `y_offset_factor` not the mechanism |
 | Language | `arabic_ui_labels_use_an_explicit_paragraph_direction` | With an Arabic face, the label's paragraph direction is `RightToLeft` and its Latin run sits right of the Arabic; English stays `Auto` |
 | Language | `arabic_catalog_stays_logical` | Catalog and command lookups stay in logical order and placeholders keep their positions |
@@ -645,7 +645,7 @@ Before accepting each test, temporarily revert the fix and confirm the named tes
 Record for every run:
 
 - exact source SHA, lockfile SHA-256, `cargo metadata` package IDs and sources;
-- features (`CRAFT_FONTS_DIR` set/unset, `EASYPDF_SYSTEM_FONTS=0/1`, `EASYPDF_RENDERER=wgpu/gl`, `monochrome_emoji_fonts`, `clipboard`);
+- features (`assets/easypdf-fonts` set/unset, `EASYPDF_SYSTEM_FONTS=0/1`, `EASYPDF_RENDERER=wgpu/gl`, `monochrome_emoji_fonts`, `clipboard`);
 - fixture hash (`tests/perf.rs::big(500)`, `named_comments(10_000)`, panel fixture);
 - OS/kernel, CPU, RAM, GPU/adapter/driver/backend, DPI/scale, window size (1400×900), renderer, profile;
 - software adapter (llvmpipe/WARP) versus real GPU;
@@ -807,6 +807,6 @@ The complete static delta review and exact old/new object identities are retaine
 
 **Historical note (superseded by the 2026-10-25 qualification state).** The migration is implemented locally but remains unpublished. At the time of this amendment, `egui`/`eframe`/`egui-wgpu` 0.37.0, the reviewed winit worktree and the shared craft-libs helpers resolved through `local-integration-config.toml`; the checked-in `Cargo.toml`/`Cargo.lock` did not yet pin them. The current tree pins egui `6d518fc`, winit `a517b38` and craft-libs `25da131` (craft-ui, craft-quit and craft-print) directly, while `craft-docpath` remains at `82a24b006eefa036b43c09a67fb9a3fbd17ffe63` (see the top section). The repository quality gates passed as recorded below; publication still requires fresh human approval. No push, PR or release is authorized by this amendment.
 
-The font contract now includes the native-only Simplified Chinese face: the pinned craft-fonts input supplies `fonts/simplified-chinese-manifest.txt` (LXGW WenKai Lite, OFL-1.1), `crates/fonts/build.rs` embeds it on native builds only under a 16 MiB cap, and a `CRAFT_FONTS_REQUIRED` build fails rather than skipping an absent or over-cap required Chinese face. Traditional Chinese is served by an installed `Hant` face placed before the Japanese faces even when LXGW is embedded. CI, release and FreeBSD keep an immutable craft-fonts commit pin; the current candidate is recorded in the task evidence and the pin must be updated only to a published central commit.
+The font contract is self-contained: `assets/easypdf-fonts` stores all 22 approved OFL font binaries and its manifest activates the 21 currently used faces. Noto Sans CJK SC serves native Simplified Chinese; LXGW WenKai Lite is retained as an inactive reserve. `crates/fonts/build.rs` reads the manifest directly; CI, Docker, release and FreeBSD builds never clone a font repository or depend on a font environment variable. Traditional Chinese may additionally use an installed `Hant` face placed before the Japanese faces. The compact web payload intentionally omits the large Hans faces.
 
 Fallback faces now use egui 0.37's `FontTweak::fallback_align = FallbackAlign::Baseline` for the existing one-baseline intent (the metric-derived `y_offset_factor` compensation is gone). Control-channel synthetic input that times out after a press keeps one bounded release batch, so a key, pointer button or modifier cannot stay held when the window resumes. Accepted-frame counting remains one count per presented frame, verified at `max_passes` above two.

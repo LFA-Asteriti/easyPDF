@@ -1,8 +1,8 @@
 //! The last-resort interface font: one face already installed on this machine.
 //!
-//! The embedded faces (Inter, egui's defaults, craft-fonts) come first in every family; this one
+//! The embedded faces (Inter, egui's defaults, easyPDF font bundle) come first in every family; this one
 //! only draws characters none of them has, such as an Arabic file name in a build without
-//! craft-fonts, or the Simplified Chinese interface in a build without a `Hans` face (#826). A
+//! easyPDF font bundle, or the Simplified Chinese interface in a build without a `Hans` face (#826). A
 //! few more installed faces, [`devanagari_fallback`], [`telugu_fallback`], [`sinhala_fallback`],
 //! [`tamil_fallback`], [`hebrew_fallback`] and [`hangul_fallback`], draw Hindi, Telugu, Sinhala,
 //! Tamil, Hebrew and Korean when one is installed. It is read at runtime and never embedded or
@@ -37,15 +37,15 @@ const HEBREW_PROBE: char = '\u{05D0}';
 /// Hangul syllable hih (힣, U+D7A3), the last of the 11,172 modern syllables: a face with it has
 /// the whole block. Droid Sans Fallback, for one, has 가 but few other syllables.
 const HANGUL_PROBE: char = '\u{D7A3}';
-/// 欢 (U+6B22): Simplified only, absent from the Japanese craft-fonts faces.
+/// 欢 (U+6B22): Simplified only, absent from the Japanese easyPDF font bundle faces.
 const HANS_PROBE: char = '\u{6B22}';
-/// 說 (U+8AAA): Traditional only, absent from the Japanese craft-fonts faces.
+/// 說 (U+8AAA): Traditional only, absent from the Japanese easyPDF font bundle faces.
 const HANT_PROBE: char = '\u{8AAA}';
 
 /// What the installed face is wanted for, from the interface language.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Need {
-    /// Scripts no embedded face has (Arabic in a build without craft-fonts).
+    /// Scripts no embedded face has (Arabic in a build without easyPDF font bundle).
     #[default]
     Other,
     /// Simplified Chinese interface text.

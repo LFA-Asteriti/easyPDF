@@ -1,4 +1,4 @@
-//! Typed signatures and bounded glyph outlines from approved fonts (bundled, or craft-fonts).
+//! Typed signatures and bounded glyph outlines from approved fonts (bundled, or easyPDF font bundle).
 
 use skrifa::instance::{LocationRef, Size};
 use skrifa::outline::{DrawSettings, OutlinePen};
@@ -48,7 +48,7 @@ pub struct GlyphOutline {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GlyphError {
-    /// This build has no Japanese face: it was built without craft-fonts (`CRAFT_FONTS_DIR`).
+    /// This build has no Japanese face: it was built without easyPDF font bundle (`assets/easypdf-fonts`).
     NoFont,
     Missing,
     TooComplex,
@@ -139,23 +139,23 @@ pub fn face_has(bytes: &[u8], ch: char) -> bool {
     FontRef::new(bytes).is_ok_and(|font| font.charmap().map(ch).is_some())
 }
 
-/// Return one glyph of `face` (a craft-fonts face), bounded so hostile replacement text cannot
+/// Return one glyph of `face` (a easyPDF font bundle face), bounded so hostile replacement text cannot
 /// allocate unbounded outline data.
-pub fn craft_glyph(face: &crate::CraftFont, ch: char) -> Result<GlyphOutline, GlyphError> {
+pub fn bundled_glyph(face: &crate::EasyPdfFont, ch: char) -> Result<GlyphOutline, GlyphError> {
     glyph_in_face(face.bytes, ch)
 }
 
 /// Return one glyph of the Japanese document face ([`crate::document_japanese_font`], Shippori
-/// Mincho from craft-fonts), bounded so hostile replacement text cannot allocate unbounded
+/// Mincho from easyPDF font bundle), bounded so hostile replacement text cannot allocate unbounded
 /// outline data. [`GlyphError::NoFont`] when the build has no Japanese face.
 pub fn japanese_glyph(ch: char) -> Result<GlyphOutline, GlyphError> {
     let Some(face) = crate::document_japanese_font() else { return Err(GlyphError::NoFont) };
     japanese_glyph_from(face, ch)
 }
 
-/// The bounded outline and advance from the explicitly selected craft-fonts face.
+/// The bounded outline and advance from the explicitly selected easyPDF font bundle face.
 /// Uses the same complexity and missing-glyph checks as [`japanese_glyph`].
-pub fn japanese_glyph_from(face: &crate::CraftFont, ch: char) -> Result<GlyphOutline, GlyphError> {
+pub fn japanese_glyph_from(face: &crate::EasyPdfFont, ch: char) -> Result<GlyphOutline, GlyphError> {
     glyph_in_face(face.bytes, ch)
 }
 
@@ -331,14 +331,14 @@ mod tests {
     }
 
     #[test]
-    fn japanese_glyphs_come_from_craft_fonts() {
+    fn japanese_glyphs_come_from_easypdf_fonts() {
         if crate::document_japanese_font().is_none() {
-            eprintln!("skipping the glyph checks: built without craft-fonts (set CRAFT_FONTS_DIR)");
+            eprintln!("skipping the glyph checks: built without easyPDF font bundle (set assets/easypdf-fonts)");
             assert_eq!(super::japanese_glyph('こ'), Err(super::GlyphError::NoFont));
             return;
         }
         for ch in "日本語の文字こ".chars() {
-            let g = super::japanese_glyph(ch).expect("craft-fonts face has the Japanese glyph");
+            let g = super::japanese_glyph(ch).expect("easyPDF font bundle face has the Japanese glyph");
             assert!(g.width > 0.2 && g.width < 2.0);
             assert!(!g.contours.is_empty());
         }

@@ -50,7 +50,7 @@ modules:
       - install -Dm644 share/metainfo/it.twinba.easypdf.metainfo.xml /app/share/metainfo/it.twinba.easypdf.metainfo.xml
       # OCR models (with their licences), found at /app/bin/../share/easypdf/models.
       - mkdir -p /app/share/easypdf && cp -R share/easypdf/models /app/share/easypdf/
-      # Licences, including the embedded craft-fonts' OFL texts.
+      # Licences, including the embedded easyPDF font bundle' OFL texts.
       - mkdir -p /app/share/icons /app/share/doc && cp -R share/icons/hicolor /app/share/icons/ && cp -R share/doc/easypdf /app/share/doc/
     sources:
       - type: dir

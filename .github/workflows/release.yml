@@ -14,19 +14,11 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 180
     env:
-      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
-      CRAFT_FONTS_REQUIRED: '1'
       CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
       CRAFT_I18N_REQUIRED: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: storytold/craft-fonts
-          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
-          path: craft-fonts
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -58,19 +50,11 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 180
     env:
-      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
-      CRAFT_FONTS_REQUIRED: '1'
       CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
       CRAFT_I18N_REQUIRED: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: storytold/craft-fonts
-          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
-          path: craft-fonts
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -97,19 +81,11 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 180
     env:
-      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
-      CRAFT_FONTS_REQUIRED: '1'
       CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
       CRAFT_I18N_REQUIRED: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: storytold/craft-fonts
-          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
-          path: craft-fonts
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -137,19 +113,11 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 180
     env:
-      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
-      CRAFT_FONTS_REQUIRED: '1'
       CRAFT_I18N_DIR: ${{ github.workspace }}/craft-i18n
       CRAFT_I18N_REQUIRED: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: storytold/craft-fonts
-          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
-          path: craft-fonts
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -187,7 +155,7 @@ jobs:
           cp ATTRIBUTION.toml ATTRIBUTION.md NOTICE LICENSE-MIT LICENSE-APACHE assets/LICENSE-easyPDF-brand.txt dist/web-host/
           mkdir -p dist/web-host/font-licences
           cp assets/fonts/OFL-*.txt dist/web-host/font-licences/
-          for ofl in craft-fonts/fonts/*/OFL.txt; do
+          for ofl in assets/easypdf-fonts/fonts/*/OFL.txt; do
             family=$(basename "$(dirname "$ofl")")
             cp "$ofl" "dist/web-host/font-licences/OFL-$family.txt"
           done

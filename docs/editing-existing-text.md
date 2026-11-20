@@ -25,7 +25,7 @@ completes its subsets automatically, including new Chinese characters. When the 
 the complete program of a paragraph's font (not a subset) and its licence allows editable
 embedding, a character the font's encoding can't show is drawn with that same program. A
 character no available face has is refused with an error that names it, and a CJK character
-without a craft-fonts build says so. Replacement text takes the craft-fonts Japanese faces when
+without a easyPDF font bundle build says so. Replacement text takes the easyPDF font bundle Japanese faces when
 they can draw all of it, and the bundled Inter face (`assets/fonts`) for the Latin, Greek and
 Cyrillic letters they lack (Uzbek `қизил`, Kazakh `әже`): that face needs no build input, so
 these work in every build, the web one included. Choosing another face
@@ -39,10 +39,10 @@ shares a single copy of it. The Type 3 fonts generated for Japanese or Hebrew ch
 page's fonts lack are made anew by each edit; after an edit, those nothing on the page shows any
 more leave the page's resources, unless some content that could name them can't be read.
 Original subset bytes are
-preserved. Optional matching faces from `CRAFT_FONTS_DIR` can also complete source subsets;
+preserved. Optional matching faces from `assets/easypdf-fonts` can also complete source subsets;
 this works only when that build input actually contains the full face. This change does not
 add a font binary or change the release font pin. Fonts shared by releases belong in
-`storytold/craft-fonts` under the repository's asset rules.
+`storytold/easyPDF font bundle` under the repository's asset rules.
 
 When mixed-style text needs outline fallback, characters using the same actual fallback face
 share Type 3 fonts, with at most 240 distinct glyphs per font. Adjacent characters with the same

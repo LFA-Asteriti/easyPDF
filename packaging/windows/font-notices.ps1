@@ -1,5 +1,5 @@
 # Validate one non-comment manifest row before adding its family notice.
-function Get-CraftFontNoticeRow([string] $rootPath, [string] $manifest, [string] $line) {
+function Get-EasyPdfFontNoticeRow([string] $rootPath, [string] $manifest, [string] $line) {
   $fields = @($line -split ' \| ' | ForEach-Object { $_.Trim() })
   if ($fields.Count -lt 6 -or $fields[4] -ne 'OFL-1.1') { throw "Missing OFL metadata in ${manifest}: $line" }
   # Manifest notice paths must name a family-local file, never escape the font input.
@@ -19,19 +19,18 @@ function Get-CraftFontNoticeRow([string] $rootPath, [string] $manifest, [string]
 
 # Validate every declared native font notice before either Windows package is created.
 # Checking all declared faces is deliberately conservative: size-capped faces may not be embedded.
-function Get-CraftFontNotices([string] $FontRoot, [bool] $RequireChinese = $false) {
+function Get-EasyPdfFontNotices([string] $FontRoot, [bool] $UnusedLegacyFlag = $false) {
   $rootPath = (Resolve-Path -LiteralPath $FontRoot).Path
   $notices = @{}
-  foreach ($name in 'manifest.txt', 'simplified-chinese-manifest.txt') {
+  foreach ($name in 'manifest.txt') {
     $manifest = Join-Path $rootPath "fonts/$name"
     if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) {
-      if ($name -eq 'manifest.txt' -or $RequireChinese) { throw "Missing font manifest: $manifest" }
-      continue
+      throw "Missing font manifest: $manifest"
     }
     foreach ($line in Get-Content -LiteralPath $manifest) {
       $line = $line.Trim()
       if (-not $line -or $line.StartsWith('#')) { continue }
-      $entry = Get-CraftFontNoticeRow $rootPath $manifest $line
+      $entry = Get-EasyPdfFontNoticeRow $rootPath $manifest $line
       $notices[$entry.Family] = $entry.Notice
     }
   }
@@ -40,7 +39,7 @@ function Get-CraftFontNotices([string] $FontRoot, [bool] $RequireChinese = $fals
 }
 
 # MSI FileName may be short|long. Compare the long names with the staged inventory.
-function Assert-CraftFontNoticeNames([string[]] $Expected, [string[]] $Actual) {
+function Assert-EasyPdfFontNoticeNames([string[]] $Expected, [string[]] $Actual) {
   $names = @($Actual | ForEach-Object { ($_ -split '\|')[-1] })
   foreach ($name in $Expected) {
     if ($name -notin $names) { throw "The MSI is missing staged font notice: $name" }

@@ -1829,7 +1829,7 @@ mod tests {
         let mut out = Session::new();
         let oid = out.open("ocr.pdf", None, bytes, None).unwrap();
         let text = crate::tests::page_texts(&out, oid)[0].clone();
-        if easypdf_fonts::CRAFT_FONTS.is_empty() {
+        if easypdf_fonts::EASYPDF_FONTS.is_empty() {
             assert!(text.contains("??????"), "{text}");
         } else {
             assert!(text.contains("Привет"), "{text}");
@@ -1842,8 +1842,8 @@ mod tests {
     /// the Latin word elsewhere on the page stays.
     #[test]
     fn the_editable_type3_layer_is_redacted_end_to_end() {
-        if easypdf_fonts::CRAFT_FONTS.is_empty() {
-            eprintln!("skipping: built without craft-fonts (set CRAFT_FONTS_DIR to run it)");
+        if easypdf_fonts::EASYPDF_FONTS.is_empty() {
+            eprintln!("skipping: built without easyPDF font bundle (set assets/easypdf-fonts to run it)");
             return;
         }
         let mut s = Session::new().with_clock(|| 1_700_000_000);
@@ -1892,8 +1892,8 @@ mod tests {
     /// shows page 1's text.
     #[test]
     fn editable_output_keeps_each_pages_own_words() {
-        if easypdf_fonts::CRAFT_FONTS.is_empty() {
-            eprintln!("skipping: built without craft-fonts (set CRAFT_FONTS_DIR to run it)");
+        if easypdf_fonts::EASYPDF_FONTS.is_empty() {
+            eprintln!("skipping: built without easyPDF font bundle (set assets/easypdf-fonts to run it)");
             return;
         }
         let mut s = Session::new().with_clock(|| 1_700_000_000);

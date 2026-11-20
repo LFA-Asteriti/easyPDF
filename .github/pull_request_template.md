@@ -46,8 +46,8 @@ This is the part that cannot be undone after a merge, and the part a new contrib
 least likely to know about. Please read `AGENTS.md` §1 before adding any asset.
 
 - [ ] No asset from an Adobe product, and no Adobe icon recreated, traced or imitated
-- [ ] No font files committed here (they live in
-      [storytold/craft-fonts](https://github.com/storytold/craft-fonts))
+- [ ] Any font file is under `assets/easypdf-fonts` or `assets/fonts`, openly licensed,
+      hash-pinned in `ATTRIBUTION.toml`, and listed in the appropriate internal manifest
 - [ ] No GPL/AGPL code copied in — MuPDF, Ghostscript, Poppler, veraPDF and DSS may only be
       run as external oracle processes
 - [ ] Behaviour comes from the specification or black-box observation, **not** from reading

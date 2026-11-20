@@ -19,10 +19,10 @@ Today it holds what generated appearances need without a font program:
   `set_undrawn_mark` (`UNDRAWN_MARK`, read back by `undrawn_mark`) so the edit is reported and
   flattening refuses. `script_missing` names what the typed-signature script font and its Inter fallback both lack.
 
-It also holds the fonts of the optional [craft-fonts](https://github.com/storytold/craft-fonts)
-build input. `build.rs` embeds them as `CRAFT_FONTS` when the build sets
-`CRAFT_FONTS_DIR=<checkout>` (and fails if it can't while `CRAFT_FONTS_REQUIRED=1`, as releases
-set). Without that variable `CRAFT_FONTS` is empty and everything below copes:
+It also exposes the self-contained multilingual font bundle in `assets/easypdf-fonts`.
+`build.rs` reads its audited manifest directly and embeds the active rows as
+`EASYPDF_FONTS`; no environment variable, download or external font repository is
+required. A missing or invalid internal bundle fails the build:
 
 - `ui_japanese_fonts`: the `Jpan` faces for the interface, BIZ UDPGothic first.
 - `ui_chinese_fonts`: the `Hans` faces for the interface, in manifest order (without one,
@@ -35,8 +35,8 @@ set). Without that variable `CRAFT_FONTS` is empty and everything below copes:
   document titles), in manifest order.
 - `ui_hebrew_fonts` / `document_hebrew_font(bold)`: the `Hebr` faces (Noto Sans Hebrew) for
   Hebrew interface text, and the face whose outlines become the Type 3 fallback for Hebrew text
-  written by Edit text (Bold when asked for and present, else Regular). `None` without a
-  craft-fonts input that has one; the editor then reports a clear error.
+  written by Edit text (Bold when asked for and present, else Regular). `None` if the
+  audited manifest contains no Hebrew face; the editor then reports a clear error.
 - `shape_hebrew` / `hebrew_has`: the Regular `Hebr` face shaped with harfrust for Hebrew Add
   Text content, one cluster per letter with its points and cantillation marks (positioned by the
   face), drawn by the same Type 3 writer as Arabic and Thai. `GlyphError::NoFont` without the face.
@@ -59,7 +59,7 @@ set). Without that variable `CRAFT_FONTS` is empty and everything below copes:
   and shaped Thai Add Text content. Harfrust positions stacked vowel/tone marks and decomposes
   Sara Am; cluster ToUnicode entries preserve the original text. The shared Type 3 writer
   embeds outlines, so reopening does not depend on installed fonts.
-- `craft_glyph(face, ch)` and `face_has(bytes, ch)`: bounded outlines and glyph coverage for any bundled face.
+- `bundled_glyph(face, ch)` and `face_has(bytes, ch)`: bounded outlines and glyph coverage for any bundled face.
 - `SHIPPORI_MINCHO`: Shippori Mincho's bytes, or `None`.
 - `TextPlan::for_words`: how the OCR output writes text beyond WinAnsi — per word the first
   face (document face first) whose glyphs cover it, planned once per page into Type 3 fonts

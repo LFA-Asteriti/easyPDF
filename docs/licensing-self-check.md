@@ -17,7 +17,7 @@ Missing files, empty or invalid text, changed hashes, duplicate mappings, case-i
 destination collisions, parent-file conflicts and unsafe paths fail the check. Source
 symlinks must resolve inside the checkout. OCR models need complete attribution and valid
 hashes and destination names; the model binaries and downloaded licence texts need not be
-present. The optional craft-fonts checkout remains governed by its own attribution and
+present. The internal `assets/easypdf-fonts` bundle remains governed by its per-file attribution and
 the existing asset validator; this command does not audit that external checkout.
 
 When changing attribution, edit `ATTRIBUTION.toml`, run `cargo xtask assets --write`. Generated attribution consistency remains checked only

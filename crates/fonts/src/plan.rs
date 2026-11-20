@@ -1,19 +1,19 @@
 //! Planning visible Unicode text output for OCR: which characters the standard WinAnsi
-//! fonts show as is, which need a Type3 font drawn from the craft-fonts faces, and which have
+//! fonts show as is, which need a Type3 font drawn from the easyPDF font bundle faces, and which have
 //! no glyph anywhere (written as `?` — and counted, never silently dropped).
 //!
 //! The plan is a pure function of the words ([`TextPlan::for_words`]). The content generators
 //! (`easypdf_ocr::text_layer` / `visible_text_layer`) read the per-character codes and
 //! advances from it, and whoever registers the fonts (`easypdf_edit::add_type3_fonts`) fills
-//! in each face's resource name and object. The build must work without craft-fonts too: there
-//! [`CRAFT_FONTS`] is empty, nothing can be planned, and every non-WinAnsi character is
+//! in each face's resource name and object. The build must work without easyPDF font bundle too: there
+//! [`EASYPDF_FONTS`] is empty, nothing can be planned, and every non-WinAnsi character is
 //! reported as a substitution instead.
 
 use std::collections::HashMap;
 
 use easypdf_cos::ObjRef;
 
-use crate::{CraftFont, GlyphOutline, craft_glyph, document_japanese_font, face_has, fits_win_ansi, win_ansi_char};
+use crate::{EasyPdfFont, GlyphOutline, bundled_glyph, document_japanese_font, face_has, fits_win_ansi, win_ansi_char};
 
 /// Unique characters per Type3 font: the same bound the text-editing fallback uses, so one
 /// hostile word cannot balloon into thousands of glyph streams. A face with more characters
@@ -24,7 +24,7 @@ pub const MAX_TYPE3_GLYPHS: usize = 240;
 /// exceed it; hostile input beyond it degrades to `?` substitutions, which are counted.
 pub const MAX_PLAN_GLYPHS: usize = 2400;
 
-/// One planned Type3 font: the glyphs of one craft-fonts face, one character per code
+/// One planned Type3 font: the glyphs of one easyPDF font bundle face, one character per code
 /// (`code = position + 1`, as in the text-editing fallback). `name` and `object` are filled in
 /// when the font is added to a page's resources; until then the content generators fall back to
 /// the WinAnsi path for the words that reference it.
@@ -69,11 +69,11 @@ pub struct TextPlan {
 
 impl TextPlan {
     /// Plan the output for `words`, in order: characters the WinAnsi fonts can't show get codes
-    /// in Type3 fonts built from the craft-fonts faces (the document face preferred, then the
+    /// in Type3 fonts built from the easyPDF font bundle faces (the document face preferred, then the
     /// rest of the build input in manifest order); a word whose face can't show a character
     /// substitutes its `?`. Faces are chosen per word, so a word of one script stays one face;
     /// characters already planned for an earlier word keep their code. Built without
-    /// craft-fonts, the plan reports every non-WinAnsi character as a substitution.
+    /// easyPDF font bundle, the plan reports every non-WinAnsi character as a substitution.
     pub fn for_words<'a>(words: impl IntoIterator<Item = &'a str>) -> TextPlan {
         let faces = document_faces();
         let mut coverage = Coverage::default();
@@ -100,7 +100,7 @@ impl TextPlan {
                     run = Some(where_.0);
                     continue;
                 }
-                if let Ok(glyph) = craft_glyph(face, ch)
+                if let Ok(glyph) = bundled_glyph(face, ch)
                     && plan.planned_glyphs() < MAX_PLAN_GLYPHS
                     && let Some((fi, code)) = plan.add_glyph(face, ch, glyph)
                 {
@@ -160,13 +160,13 @@ impl TextPlan {
     }
 
     /// Add a glyph to the face's current font (a fresh one when that font is full).
-    fn add_glyph(&mut self, face: &CraftFont, ch: char, glyph: GlyphOutline) -> Option<(usize, u8)> {
+    fn add_glyph(&mut self, face: &EasyPdfFont, ch: char, glyph: GlyphOutline) -> Option<(usize, u8)> {
         let fi = self.font_of_face(face.family)?;
         let code = self.fonts[fi].push(ch, glyph);
         Some((fi, code))
     }
 
-    /// The index of the face's open font, or a fresh one. `None` without craft-fonts (the
+    /// The index of the face's open font, or a fresh one. `None` without easyPDF font bundle (the
     /// face itself comes from there, so this cannot happen for a planned face).
     fn font_of_face(&mut self, family: &'static str) -> Option<usize> {
         if let Some(fi) = self.fonts.iter().rposition(|f| f.family == family && f.glyphs.len() < MAX_TYPE3_GLYPHS) {
@@ -180,8 +180,8 @@ impl TextPlan {
     }
 
     /// The code of the font's `?` stand-in, adding the glyph when the font lacks it.
-    /// `prefer` is the run's current font; `None` without craft-fonts.
-    fn question_mark(&mut self, face: &CraftFont, prefer: Option<usize>) -> Option<(usize, u8)> {
+    /// `prefer` is the run's current font; `None` without easyPDF font bundle.
+    fn question_mark(&mut self, face: &EasyPdfFont, prefer: Option<usize>) -> Option<(usize, u8)> {
         if let Some(fi) = prefer
             && let Some(code) = self.fonts[fi].glyphs.iter().position(|(c, _)| *c == '?')
         {
@@ -191,7 +191,7 @@ impl TextPlan {
         if let Some(code) = self.fonts[fi].glyphs.iter().position(|(c, _)| *c == '?') {
             return Some((fi, code as u8 + 1));
         }
-        let glyph = craft_glyph(face, '?').ok()?;
+        let glyph = bundled_glyph(face, '?').ok()?;
         let code = self.fonts[fi].push('?', glyph);
         Some((fi, code))
     }
@@ -199,12 +199,12 @@ impl TextPlan {
 
 /// The faces that can draw document text, in preference order: the Japanese document face
 /// (serif document text) first, then the rest of the build input in manifest order.
-fn document_faces() -> Vec<&'static CraftFont> {
+fn document_faces() -> Vec<&'static EasyPdfFont> {
     let mut out = Vec::new();
     if let Some(d) = document_japanese_font() {
         out.push(d);
     }
-    for f in crate::CRAFT_FONTS {
+    for f in crate::EASYPDF_FONTS {
         if !out.iter().any(|d| std::ptr::eq(*d, f)) {
             out.push(f);
         }
@@ -215,7 +215,7 @@ fn document_faces() -> Vec<&'static CraftFont> {
 /// The face for a word: the first (in preference order) whose glyphs cover every character,
 /// else the one covering the most characters (ties go to the earlier face). `None` when no
 /// face covers any character of the word.
-fn choose_face<'f>(faces: &[&'f CraftFont], word: &str, coverage: &mut Coverage) -> Option<&'f CraftFont> {
+fn choose_face<'f>(faces: &[&'f EasyPdfFont], word: &str, coverage: &mut Coverage) -> Option<&'f EasyPdfFont> {
     if let Some(f) = faces.iter().enumerate().find(|(i, f)| word.chars().all(|c| coverage.has(*i, f, c))).map(|(_, f)| *f) {
         return Some(f);
     }
@@ -238,7 +238,7 @@ struct Coverage {
 
 impl Coverage {
     /// Whether face number `i` (`face`) has `ch`; asks the font once per pair.
-    fn has(&mut self, i: usize, face: &CraftFont, ch: char) -> bool {
+    fn has(&mut self, i: usize, face: &EasyPdfFont, ch: char) -> bool {
         *self.known.entry((i, ch)).or_insert_with(|| {
             self.lookups += 1;
             face_has(face.bytes, ch)
@@ -256,7 +256,7 @@ mod tests {
     fn face_coverage_is_remembered_per_face_and_character() {
         let faces = document_faces();
         let Some(face) = faces.first() else {
-            eprintln!("skipping: built without craft-fonts (set CRAFT_FONTS_DIR to run it)");
+            eprintln!("skipping: built without easyPDF font bundle (set assets/easypdf-fonts to run it)");
             return;
         };
         let mut coverage = Coverage::default();
@@ -276,16 +276,16 @@ mod tests {
         assert_eq!(plan.missing(), 0);
         let none = TextPlan::for_words(["plain text"]);
         assert_eq!(none.missing(), 0);
-        // U+1F600 has no WinAnsi code and no glyph in any bundled face (with craft-fonts the
+        // U+1F600 has no WinAnsi code and no glyph in any bundled face (with easyPDF font bundle the
         // JIS faces even cover the snowman): counted, shown as '?'.
         let emoji = TextPlan::for_words(["\u{1f600}!"]);
         assert_eq!(emoji.missing(), 1);
     }
 
     #[test]
-    fn without_craft_fonts_every_non_win_ansi_character_is_reported() {
-        if !crate::CRAFT_FONTS.is_empty() {
-            eprintln!("built with craft-fonts: the planning tests with faces cover this instead");
+    fn without_easypdf_fonts_every_non_win_ansi_character_is_reported() {
+        if !crate::EASYPDF_FONTS.is_empty() {
+            eprintln!("built with easyPDF font bundle: the planning tests with faces cover this instead");
             return;
         }
         let plan = TextPlan::for_words(["Привет", "日本", "abc"]);
@@ -296,8 +296,8 @@ mod tests {
 
     #[test]
     fn encodings_are_aligned_and_total_the_advances() {
-        if crate::CRAFT_FONTS.is_empty() {
-            eprintln!("skipping: built without craft-fonts (set CRAFT_FONTS_DIR to run it)");
+        if crate::EASYPDF_FONTS.is_empty() {
+            eprintln!("skipping: built without easyPDF font bundle (set assets/easypdf-fonts to run it)");
             assert!(TextPlan::for_words(["日本"]).fonts.is_empty());
             return;
         }
@@ -326,8 +326,8 @@ mod tests {
 
     #[test]
     fn substitution_and_unknown_scripts_come_out_counted() {
-        if crate::CRAFT_FONTS.is_empty() {
-            eprintln!("skipping: built without craft-fonts (set CRAFT_FONTS_DIR to run it)");
+        if crate::EASYPDF_FONTS.is_empty() {
+            eprintln!("skipping: built without easyPDF font bundle (set assets/easypdf-fonts to run it)");
             return;
         }
         let plan = TextPlan::for_words(["日本\u{1f4a9}語"]);

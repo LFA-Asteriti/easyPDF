@@ -1,7 +1,7 @@
 use super::interp::Ts;
 use super::lines::page_dict;
 use super::{
-    CraftFont, Dict, Document, EditError, GlyphError, HashMap, Metrics, Object, Op, PdfString, Stream, TextLine, japanese_glyph_from, parse,
+    Dict, Document, EasyPdfFont, EditError, GlyphError, HashMap, Metrics, Object, Op, PdfString, Stream, TextLine, japanese_glyph_from, parse,
 };
 
 /// Text → the runs that show it: each run's font resource name and the bytes shown in that font.
@@ -35,7 +35,7 @@ pub(super) fn is_type3_fallback(font: &Dict) -> bool {
 
 /// The generated font's `/Name` and its resource prefix: the bundled Latin face, Hebrew, or the
 /// Japanese ones.
-fn fallback_names(face: &CraftFont, hebrew: bool) -> (&'static str, &'static str) {
+fn fallback_names(face: &EasyPdfFont, hebrew: bool) -> (&'static str, &'static str) {
     if hebrew {
         (HEBREW_FONT_NAME, "PCHe")
     } else if face.family == "Inter" {
@@ -211,7 +211,7 @@ fn pdf_num(v: f64) -> String {
     if v.fract() == 0.0 { format!("{v:.0}") } else { format!("{v:.4}").trim_end_matches('0').trim_end_matches('.').to_string() }
 }
 
-fn type3_path(face: &CraftFont, ch: char) -> Result<(Vec<u8>, f64), EditError> {
+fn type3_path(face: &EasyPdfFont, ch: char) -> Result<(Vec<u8>, f64), EditError> {
     let glyph = japanese_glyph_from(face, ch).map_err(|e| match e {
         GlyphError::NoFont => no_japanese_font(),
         GlyphError::Missing => EditError::Invalid(format!("the {} fallback font has no glyph for U+{:04X}", face.family, ch as u32)),
@@ -267,7 +267,7 @@ fn unicode_hex(ch: char) -> String {
 
 /// The same outline for a face that may simply lack the glyph: `None` then, so the caller can try
 /// the next face (and report the character once none of them has it).
-pub(crate) fn type3_glyph(face: &CraftFont, ch: char) -> Result<Option<(Vec<u8>, f64)>, EditError> {
+pub(crate) fn type3_glyph(face: &EasyPdfFont, ch: char) -> Result<Option<(Vec<u8>, f64)>, EditError> {
     match japanese_glyph_from(face, ch) {
         Err(GlyphError::Missing) => Ok(None),
         _ => type3_path(face, ch).map(Some),
@@ -284,12 +284,12 @@ pub(crate) fn no_fallback_font(text: &str) -> EditError {
     EditError::Invalid(format!(
         "the paragraph's font has no glyph for {ch} (U+{:04X}) and this build has no fallback font for it; \
          choose a font that has it (Load font… or Installed fonts…), or use an official release, which includes \
-         easyPDF's fallback fonts (to build them in, set CRAFT_FONTS_DIR to a craft-fonts checkout)",
+         easyPDF's fallback fonts (to build them in, set assets/easypdf-fonts to a easyPDF font bundle checkout)",
         u32::from(ch)
     ))
 }
 
-/// The character the craft-fonts Japanese faces are for: kana, CJK ideographs and their compatibility
+/// The character the easyPDF font bundle Japanese faces are for: kana, CJK ideographs and their compatibility
 /// and full-width forms.
 fn needs_japanese(ch: char) -> bool {
     matches!(u32::from(ch), 0x3000..=0x30FF | 0x3400..=0x4DBF | 0x4E00..=0x9FFF | 0xF900..=0xFAFF | 0xFF00..=0xFFEF)
@@ -298,14 +298,14 @@ fn needs_japanese(ch: char) -> bool {
 /// The chosen face has no outline for `ch`, and neither has any other: say which character it is and
 /// what the writer can do about it. A CJK character without a Japanese face in the build is about
 /// that build input, which is the one answer that changes it.
-pub(crate) fn no_glyph_for(face: &CraftFont, ch: char) -> EditError {
+pub(crate) fn no_glyph_for(face: &EasyPdfFont, ch: char) -> EditError {
     if needs_japanese(ch) && easypdf_fonts::document_japanese_font().is_none() {
         return no_japanese_font();
     }
     EditError::Invalid(format!(
         "the {} fallback font has no glyph for {ch} (U+{:04X}), and no fallback face covers the text; \
          choose a font that has it (Load font… or Installed fonts…), or use an official release, which includes \
-         easyPDF's fallback fonts (to build them in, set CRAFT_FONTS_DIR to a craft-fonts checkout)",
+         easyPDF's fallback fonts (to build them in, set assets/easypdf-fonts to a easyPDF font bundle checkout)",
         face.family,
         u32::from(ch)
     ))
@@ -315,13 +315,17 @@ pub(crate) fn no_glyph_for(face: &CraftFont, ch: char) -> EditError {
 pub(super) fn no_japanese_font() -> EditError {
     EditError::Invalid(
         "this text needs easyPDF's Japanese fallback font, which this build doesn't include \
-         (official releases do; to build it in, set CRAFT_FONTS_DIR to a craft-fonts checkout)"
+         (official releases do; to build it in, set assets/easypdf-fonts to a easyPDF font bundle checkout)"
             .into(),
     )
 }
 
 /// The first of `faces` (best match first) that has a glyph for every one of `chars`, else the first.
-pub(crate) fn fallback_face<'a>(faces: &[&'a CraftFont], chars: &[char], has_glyph: impl Fn(&CraftFont, char) -> bool) -> Option<&'a CraftFont> {
+pub(crate) fn fallback_face<'a>(
+    faces: &[&'a EasyPdfFont],
+    chars: &[char],
+    has_glyph: impl Fn(&EasyPdfFont, char) -> bool,
+) -> Option<&'a EasyPdfFont> {
     faces.iter().copied().find(|face| chars.iter().all(|ch| has_glyph(face, *ch))).or_else(|| faces.first().copied())
 }
 
@@ -329,7 +333,7 @@ pub(crate) fn fallback_face<'a>(faces: &[&'a CraftFont], chars: &[char], has_gly
 fn no_hebrew_font() -> EditError {
     EditError::Invalid(
         "this text needs easyPDF's Hebrew fallback font (Noto Sans Hebrew), which this build doesn't include \
-         (to build it in, set CRAFT_FONTS_DIR to a craft-fonts checkout that has it)"
+         (to build it in, set assets/easypdf-fonts to a easyPDF font bundle checkout that has it)"
             .into(),
     )
 }
@@ -339,7 +343,7 @@ fn no_hebrew_font() -> EditError {
 /// and the bundled Latin one for anything it lacks; other text takes the Japanese faces, and the
 /// bundled Latin face behind them, which covers the Latin, Greek and Cyrillic letters they lack
 /// (#2593: the Japanese faces have no қ, ғ, ҳ, ә, ө, ү, ұ or һ).
-pub(crate) fn type3_faces(text: &str, family: crate::added::Family, bold: bool) -> Result<(Vec<&'static CraftFont>, bool), EditError> {
+pub(crate) fn type3_faces(text: &str, family: crate::added::Family, bold: bool) -> Result<(Vec<&'static EasyPdfFont>, bool), EditError> {
     let japanese = easypdf_fonts::document_japanese_fonts_for_style(family == crate::added::Family::Times, bold);
     let latin = easypdf_fonts::document_latin_fonts(bold);
     if !text.chars().any(crate::bidi::is_hebrew) {
@@ -379,7 +383,7 @@ pub(super) fn type3_font(
     // text keeps the Hebrew face and takes each character it lacks from the next face that has it.
     let face = if hebrew { faces.first().copied() } else { fallback_face(&faces, &chars, |face, ch| japanese_glyph_from(face, ch).is_ok()) }
         .ok_or_else(|| no_fallback_font(text))?;
-    let others: &[&CraftFont] = if hebrew { faces.get(1..).unwrap_or_default() } else { &[] };
+    let others: &[&EasyPdfFont] = if hebrew { faces.get(1..).unwrap_or_default() } else { &[] };
     // Every outline is read before the document is touched, so a character that fails leaves it
     // as it was. Each font takes the next `per_font` characters; codes restart at 1 in each.
     let per_font = max_glyphs.clamp(1, MAX_TYPE3_GLYPHS);
@@ -406,7 +410,7 @@ pub(super) fn type3_font(
 pub(crate) fn write_type3_glyphs(
     doc: &mut Document,
     fonts_res: &mut Dict,
-    face: &CraftFont,
+    face: &EasyPdfFont,
     hebrew: bool,
     glyphs: Vec<Type3Glyph>,
     per_font: usize,
@@ -433,7 +437,7 @@ pub(crate) fn write_type3_glyphs(
 /// Adds one generated font whose codes 1 to `glyphs.len()` show `glyphs`, and returns its resource
 /// name (`PCLat`, `PCJp`, then `PCJp1`, ...; `PCHe`, ... for Hebrew text). Nothing here can fail: the
 /// outlines were read already.
-pub(super) fn add_type3_font(doc: &mut Document, fonts_res: &mut Dict, face: &CraftFont, hebrew: bool, glyphs: Vec<Type3Glyph>) -> String {
+pub(super) fn add_type3_font(doc: &mut Document, fonts_res: &mut Dict, face: &EasyPdfFont, hebrew: bool, glyphs: Vec<Type3Glyph>) -> String {
     let last_char = glyphs.len();
     let mut charprocs = Dict::new();
     let mut widths = Vec::with_capacity(last_char);

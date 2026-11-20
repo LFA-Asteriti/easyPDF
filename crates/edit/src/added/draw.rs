@@ -38,7 +38,7 @@ fn placed(t: &AddedText, r: [f64; 4], paragraphs: &[usize], i: usize, w: f64, sp
 }
 
 /// Draw a text item that has Arabic, Hebrew or Thai in it. Each line is laid out in display order; their glyphs
-/// come from Type 3 fonts drawn from the craft-fonts face's outlines (no font file is embedded),
+/// come from Type 3 fonts drawn from the easyPDF font bundle face's outlines (no font file is embedded),
 /// with a ToUnicode map for copy and search. Other text uses the item's standard font.
 fn draw_shaped(doc: &mut Document, t: &AddedText, taken: &Dict, fonts: &mut Dict, out: &mut Vec<u8>) -> Result<(), EditError> {
     let laid = wrapped(t)
@@ -49,7 +49,7 @@ fn draw_shaped(doc: &mut Document, t: &AddedText, taken: &Dict, fonts: &mut Dict
 }
 
 /// [`draw_shaped`] for lines that are already laid out. `outline` is the source of glyph outlines
-/// for a script's face (the craft-fonts faces, or a stand-in in tests).
+/// for a script's face (the easyPDF font bundle faces, or a stand-in in tests).
 pub(super) fn draw_laid_shaped(
     doc: &mut Document,
     t: &AddedText,

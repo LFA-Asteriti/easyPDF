@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <?ifndef HasCraftFontLicences ?>
-  <?define HasCraftFontLicences=0 ?>
+  <?ifndef HasEasyPdfFontLicences ?>
+  <?define HasEasyPdfFontLicences=0 ?>
   <?endif?>
   <Package Name="easyPDF" Manufacturer="Twinba Srl" Version="$(var.Version)" UpgradeCode="B8626BC0-B37E-4D1A-A09A-CE102257685F" Scope="perUserOrMachine" Compressed="yes" Language="1033">
     <SummaryInformation Description="easyPDF PDF workbench" Manufacturer="Twinba Srl" />
@@ -76,8 +76,8 @@
     <StandardDirectory Id="DesktopFolder" />
 
     <Feature Id="Main" Title="easyPDF" Level="1">
-      <?if $(var.HasCraftFontLicences) = 1 ?>
-      <ComponentGroupRef Id="CraftFontLicences" />
+      <?if $(var.HasEasyPdfFontLicences) = 1 ?>
+      <ComponentGroupRef Id="EasyPdfFontLicences" />
       <?endif?>
       <ComponentGroupRef Id="easyPDFFiles" />
       <ComponentGroupRef Id="easyPDFModels" />
@@ -89,8 +89,8 @@
     </Property><SetProperty Id="EXISTINGIMAGECONTEXTMENU" Action="CraftLoadOption2U" Value="[CRAFT_OPTION_2_U]" After="CraftLoadOption2M" Sequence="both" Condition="ALLUSERS &lt;&gt; 1" /></Package>
 
   <Fragment>
-    <?if $(var.HasCraftFontLicences) = 1 ?>
-    <ComponentGroup Id="CraftFontLicences" Directory="INSTALLFOLDER">
+    <?if $(var.HasEasyPdfFontLicences) = 1 ?>
+    <ComponentGroup Id="EasyPdfFontLicences" Directory="INSTALLFOLDER">
       <Files Include="$(var.DocsDir)\**" />
     </ComponentGroup>
     <?endif?>

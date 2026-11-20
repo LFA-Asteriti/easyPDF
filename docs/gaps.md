@@ -1,7 +1,7 @@
 # Where easyPDF falls short of Acrobat Pro
 
 > **Last reviewed:** 2026-10-28 | **Last updated:** 2026-10-28 | **Change:** minor (M10, #4119 partial: Enhance scanned file cleans scanned pages in place: background removal, edge shadow removal, despeckle; estimates unchanged)
-> **Last reviewed:** 2026-10-25 · **Last updated:** 2026-10-25 · **Change:** minor (gaps 5 and 14 current state: native release Hans face via LXGW WenKai Lite; Arabic logical catalog, explicit RTL direction and mirrored stock chrome, with native/browser/IME workflows unqualified; no readiness re-estimate)
+> **Last reviewed:** 2026-11-20 · **Last updated:** 2026-11-20 · **Change:** minor (multilingual font dependency moved into easyPDF; native Hans uses Noto Sans CJK SC; LXGW WenKai Lite is an inactive reserve; web remains compact)
 > **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-15 · **Change:** minor (gap 3: #2517 a blank line stays a paragraph break; estimates unchanged) · **Target:** Adobe Acrobat Pro (Acrobat DC, continuous track 26.002.21931, macOS)
 
 > **Last reviewed:** 2026-10-15 · **Last updated:** 2026-10-19 · **Change:** minor (gap 2: composite fonts with `/ToUnicode /Identity-H` read as Unicode, hayro-interpret patch 44; estimates unchanged) · **Target:** Adobe Acrobat Pro (Acrobat DC, continuous track 26.002.21931, macOS)
@@ -129,14 +129,14 @@ update the numbers.
 
 ### 5. Chinese UI lacks a web glyph face
 
-- **Missing:** a Simplified Chinese (`Hans`) UI face in the web build and a working fallback. Native release builds embed LXGW WenKai Lite from the pinned craft-fonts native Simplified Chinese manifest.
+- **Missing:** a Simplified Chinese (`Hans`) UI face in the compact web payload and a working fallback. Native builds embed Noto Sans CJK SC from the internal easyPDF manifest; LXGW WenKai Lite is retained internally as an inactive reserve.
 - **Evidence:** [#826](https://github.com/storytold/pdfcraft/issues/826),
   [#688](https://github.com/storytold/pdfcraft/issues/688),
   [#728](https://github.com/storytold/pdfcraft/issues/728),
   [#758](https://github.com/storytold/pdfcraft/issues/758),
   [#689](https://github.com/storytold/pdfcraft/issues/689) (Flatpak) predate the native face; the
   web build still embeds only BIZ UDPGothic Regular plus the small Arabic, Hebrew, Thai and Devanagari faces.
-  craft-fonts has Noto Sans CJK SC, but at 16.4 MB it is too large to embed whole; a web face needs
+  easyPDF font bundle has Noto Sans CJK SC, but at 16.4 MB it is too large to embed whole; a web face needs
   a cut of it (storytold/craft-libs#213).
 - **Impact:** the second-largest language group sees a broken interface in the web build although
   the catalog is 97% translated.
@@ -417,7 +417,7 @@ update the numbers.
 
 | Date | Change | Summary |
 |---|---|---|
-| 2026-10-25 | minor | Gaps 5 and 14 current state: native release builds embed LXGW WenKai Lite for Simplified Chinese, while the web build has no Hans face; Arabic catalogs stay logical with explicit RTL label direction and mirrored stock chrome, while native/browser RTL input, IME and complex workflows remain unqualified. Estimates unchanged. |
+| 2026-11-20 | minor | All 22 multilingual font binaries are now stored inside easyPDF. Native builds embed Noto Sans CJK SC; LXGW WenKai Lite remains available but inactive; the compact web payload still lacks a dedicated Hans face. Estimates unchanged. |
 | 2026-10-18 | minor | Gap 3: #2517 a partial rewrite keeps a kept source row in the paragraph and leaves the next marked region closed around its text. Estimates unchanged. |
 | 2026-10-15 | minor | Gap 3: #2517 a blank line at ordinary leading stays a paragraph break. Estimates unchanged. |
 | 2026-10-19 | minor | Gap 2: a Type 0 font whose `/ToUnicode` is the name `/Identity-H` or `/Identity-V` (WSCAD) reads its codes as Unicode, so such pages have text to select, find and edit (hayro-interpret patch 44, `view.render-cid-fonts`). Estimates unchanged. |

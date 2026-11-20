@@ -25,5 +25,3 @@ jobs:
   freebsd:
     # Reviewed shared workflow pinned for this easyPDF release.
     uses: storytold/craft-common-actions/.github/workflows/freebsd.yml@91e2c7617393ce0dfbe67ef5daf7254ade368203
-    with:
-      craft-fonts-ref: b076417b5880bd4154bd22f00695b1d28c6bea83

@@ -29,7 +29,7 @@
 > **Last reviewed:** 2026-10-27 | **Last updated:** 2026-10-27 | **Change:** minor (M10: OCR model downloads use verified ONNX pairs with legacy discovery fallback; estimates unchanged)
 > **Last reviewed:** 2026-10-25 | **Last updated:** 2026-10-25 | **Change:** minor (M5: one reply in the Comments panel is edited, copied or deleted from its own "…" menu; estimates unchanged)
 > **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** minor (M11: lossless JBIG2 stores each distinct mark once, as a symbol; estimates unchanged)
-> **Last reviewed:** 2026-10-25 | **Last updated:** 2026-10-25 | **Change:** minor (M14 localization current state: Arabic logical catalog, explicit RTL label direction and mirrored stock chrome; native/browser RTL workflows unqualified. Native release Hans face via LXGW WenKai Lite; estimates unchanged)
+> **Last reviewed:** 2026-11-20 | **Last updated:** 2026-11-20 | **Change:** minor (M14 multilingual fonts moved into easyPDF; native Hans uses Noto Sans CJK SC, LXGW WenKai Lite is an inactive reserve, and Telugu is bundled)
 > **Last reviewed:** 2026-10-24 · **Last updated:** 2026-10-24 · **Change:** minor (M11: the optimizer stores Group 3 fax images as Group 4, and packs black-and-white RGB and indexed images that use only palette entries 0 and 1 to one bit; estimates unchanged)
 > **Last reviewed:** 2026-10-24 · **Last updated:** 2026-10-24 · **Change:** minor (M11: black-and-white images above 450 ppi are averaged down to 300 ppi by the optimizer; estimates unchanged)
 > **Last reviewed:** 2026-10-24 · **Last updated:** 2026-10-24 · **Change:** minor (M11: black-and-white pictures stay one bit when PDFs are created and optimized; CCITT images export; estimates unchanged)
@@ -300,7 +300,7 @@ M2 (renderer), M7 (content editing), M10 (OCR and Office), M11 (Preflight and st
 
 **2026-10-26 · patch:** M2/PR #4172: reconcile current main and preserve upstream Japanese serif/weight selection alongside the installed CJK viewer and preview fallback. Estimates unchanged.
 
-**2026-10-25 · minor:** M14 localization current state: Arabic catalogs stay logical, Arabic/Kurdish labels take an explicit RTL direction, and stock chrome mirrors; native/browser RTL input, IME and complex workflows remain unqualified. Native Simplified Chinese uses LXGW WenKai Lite; the web build has no Hans face. Estimates unchanged.
+**2026-11-20 · minor:** M14 stores all 22 audited fonts internally. Native Simplified Chinese uses Noto Sans CJK SC; LXGW WenKai Lite is an inactive reserve; Telugu is bundled; the compact web payload still omits the large Hans faces. Estimates unchanged.
 
 **2026-10-23 · minor:** M11: image downsampling uses physical resolution after page-local `/UserUnit` scaling, including shared nested forms.
 Synthetic measurement and optimization regressions cover the change.

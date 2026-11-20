@@ -18,7 +18,7 @@ di staging: prima si verifica che l'overlay produca gli stessi file.
 
 Il workflow produce anche `easypdf-web-host-<versione>.zip` per il portale
 autenticato. Include le traduzioni da `craft-i18n` e i font autorizzati da
-`craft-fonts`, entrambi bloccati a commit specifici. Gli script di packaging
+`easyPDF font bundle`, entrambi bloccati a commit specifici. Gli script di packaging
 scaricano i modelli OCR descritti in `ATTRIBUTION.toml` e ne controllano gli hash.
 Le tre compilazioni devono riuscire prima che il workflow crei una **bozza**
 GitHub con i pacchetti e `SHA256SUMS.txt`. Controllare ogni download e pubblicare
