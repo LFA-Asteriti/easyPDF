@@ -409,6 +409,34 @@ fn japanese_labels_have_glyphs() {
     }
 }
 
+/// The web build cannot discover operating-system fonts. Its internal LXGW face must therefore
+/// draw every label in both Chinese catalogs, including Traditional-only characters.
+#[test]
+fn web_chinese_labels_have_glyphs() {
+    needs_catalogs!();
+    const NAME: &str = "LXGW WenKai Lite Regular";
+    let bytes = include_bytes!("../../../../assets/easypdf-fonts/fonts/lxgw-wenkai-lite/LXGWWenKaiLite-Regular.ttf");
+    let mut defs = crate::theme::font_definitions();
+    defs.font_data.insert(NAME.to_owned(), std::sync::Arc::new(egui::FontData::from_static(bytes)));
+    for family in defs.families.values_mut() {
+        family.retain(|name| !easypdf_fonts::EASYPDF_FONTS.iter().any(|face| face.name() == *name));
+        family.push(NAME.to_owned());
+    }
+    let labels: String = ["zh-hans", "zh-hant"]
+        .into_iter()
+        .flat_map(|code| {
+            let lang = Lang::from_code(code).expect("Chinese catalog is registered");
+            translations(code).chars().chain(lang.name().chars()).filter(|ch| !ch.is_control()).collect::<Vec<_>>()
+        })
+        .collect();
+    use egui::epaint::text::{Fonts, TextOptions};
+    let mut fonts = Fonts::new(TextOptions::default(), defs);
+    for id in [egui::FontId::proportional(13.0), egui::FontId::monospace(13.0), crate::theme::medium(13.0), crate::theme::semibold(17.0)] {
+        let missing: std::collections::BTreeSet<char> = labels.chars().filter(|ch| !fonts.has_glyphs(&id, &ch.to_string())).collect();
+        assert!(missing.is_empty(), "web: {id:?} lacks Chinese label glyphs {missing:?}");
+    }
+}
+
 #[test]
 fn history_labels_keep_captured_names() {
     set_current(Lang::EN);
