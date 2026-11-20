@@ -36,8 +36,8 @@ pub fn ui_japanese_fonts() -> Vec<&'static EasyPdfFont> {
 }
 
 /// The `Hans` easyPDF font bundle faces for Simplified Chinese interface text, in manifest order.
-/// Empty when built without easyPDF font bundle (Chinese text then shows the font system's
-/// replacement glyph, the same degraded mode as Japanese without easyPDF font bundle).
+/// Native builds use Noto Sans CJK SC; web builds use LXGW WenKai Lite because WebAssembly cannot
+/// discover fonts installed on the user's operating system.
 pub fn ui_chinese_fonts() -> Vec<&'static EasyPdfFont> {
     EASYPDF_FONTS.iter().filter(|f| f.covers("Hans")).collect()
 }
@@ -227,6 +227,16 @@ pub static SHIPPORI_MINCHO: Option<&[u8]> = find("Shippori Mincho", "Regular");
 #[cfg(test)]
 mod tests {
     use super::*;
+    use skrifa::MetadataProvider as _;
+
+    #[test]
+    fn web_chinese_face_covers_simplified_and_traditional_samples() {
+        let bytes = include_bytes!("../../../assets/easypdf-fonts/fonts/lxgw-wenkai-lite/LXGWWenKaiLite-Regular.ttf");
+        let face = skrifa::FontRef::new(bytes).expect("audited LXGW font must parse");
+        for ch in "简体中文欢迎使用繁體中文歡迎使用說明設定".chars() {
+            assert!(face.charmap().map(ch).is_some(), "LXGW is missing U+{:04X} {ch}", u32::from(ch));
+        }
+    }
 
     #[test]
     fn cjk_fallback_order_follows_the_ui_language() {

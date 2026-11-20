@@ -41,8 +41,11 @@ fn easy_pdf_fonts(dir: &std::path::Path) -> Result<String, String> {
         let telugu = scripts.split(',').any(|s| s.trim() == "Telu");
         let hebrew = scripts.split(',').any(|s| s.trim() == "Hebr");
         let ui_script = scripts.split(',').any(|s| matches!(s.trim(), "Thai" | "Deva" | "Hang" | "Laoo"));
-        let web_face = (*family == "BIZ UDPGothic" && *style == "Regular") || arabic || telugu || hebrew || ui_script;
-        if wasm && !web_face {
+        let web_chinese = *family == "LXGW WenKai Lite";
+        let web_face = (*family == "BIZ UDPGothic" && *style == "Regular") || web_chinese || arabic || telugu || hebrew || ui_script;
+        // Native already embeds Noto Sans CJK SC. LXGW is the browser-only Han fallback because a
+        // WASM app cannot discover or read fonts installed on the user's operating system.
+        if (wasm && !web_face) || (!wasm && web_chinese) {
             continue;
         }
         let path = dir.join(file).canonicalize().map_err(|e| format!("{file}: {e}"))?;

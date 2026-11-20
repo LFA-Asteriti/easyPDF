@@ -2936,7 +2936,7 @@ path = "assets/easypdf-fonts/fonts/lxgw-wenkai-lite/LXGWWenKaiLite-Regular.ttf"
 sha256 = "f799a538a3355877e597a0ae04050e897932c9ae7689eb9227c2953c5dd549ea"
 source = "https://github.com/lxgw/LxgwWenKai-Lite/releases/tag/v1.530"
 title = "LXGW WenKai Lite Regular"
-usage = "Audited internal easyPDF reserve for future Simplified Chinese use; stored in the repository but not currently listed in the embed manifest"
+usage = "Internal easyPDF Simplified and Traditional Chinese fallback embedded only in the web build; native builds use Noto Sans CJK SC and system fallbacks"
 
 [[bundled]]
 author = "Canonical Ltd. / Dalton Maag"

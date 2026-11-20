@@ -3,7 +3,7 @@
 //! `#[path]` and the crate's tests use it as a module, so the two can't drift.
 
 /// The CJK families embedded whole in native builds.
-pub const WHOLE_CJK_FAMILIES: [&str; 4] = ["Shippori Mincho", "BIZ UDPGothic", "BIZ UDMincho", "Noto Sans CJK SC"];
+pub const WHOLE_CJK_FAMILIES: [&str; 5] = ["Shippori Mincho", "BIZ UDPGothic", "BIZ UDMincho", "Noto Sans CJK SC", "LXGW WenKai Lite"];
 
 /// Adobe-origin type designs forbidden by AGENTS.md, regardless of size or licence.
 pub const BARRED_FAMILIES: [&str; 4] = ["Source Han", "Source Serif", "Source Sans", "Noto Serif CJK"];
@@ -71,6 +71,7 @@ mod tests {
     fn approved_cjk_families_are_embedded_whole() {
         assert_eq!(cjk_size_decision("BIZ UDPGothic", u64::MAX, false), CjkSizeDecision::Embed);
         assert_eq!(cjk_size_decision("Noto Sans CJK SC", u64::MAX, false), CjkSizeDecision::Embed);
+        assert_eq!(cjk_size_decision("LXGW WenKai Lite", u64::MAX, true), CjkSizeDecision::Embed);
         assert_eq!(cjk_size_decision("Other CJK", MAX_OTHER_CJK_BYTES + 1, false), CjkSizeDecision::Skip);
     }
 }
