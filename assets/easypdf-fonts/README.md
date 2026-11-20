@@ -8,14 +8,14 @@ Every manifest row records the original upstream source, OFL-1.1 licence,
 licence file and SHA-256 of the unmodified font binary. The same files are
 listed individually in the project root `ATTRIBUTION.toml`.
 
-The directory contains all 22 approved font binaries formerly supplied by the
-external font input. The manifest activates the 21 faces currently used by
-easyPDF; LXGW WenKai Lite is retained as an audited OFL reserve for future use
-without adding it to application binaries. The native application embeds all approved manifest rows. The web
-build embeds only the smaller faces required by its supported interface scripts
-so the WASM remains within common hosting limits. `Noto Sans CJK SC` is active
-for the native Simplified Chinese interface; `LXGW WenKai Lite` remains stored
-but inactive. Both were explicitly approved by the project owner on 2026-11-20.
+The directory and manifest contain all 22 approved font binaries formerly
+supplied by the external font input. Platform filtering prevents duplicate
+large CJK faces: the native application embeds `Noto Sans CJK SC`, while the
+web build embeds `LXGW WenKai Lite` for both Simplified and Traditional Chinese
+because WebAssembly cannot discover operating-system fonts. The web build keeps
+only the other faces required by supported interface scripts so the WASM remains
+within common hosting limits. Both Chinese faces were explicitly approved by
+the project owner on 2026-11-20.
 
 When changing this bundle:
 
