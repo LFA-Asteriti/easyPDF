@@ -20,7 +20,7 @@ concurrency:
 jobs:
   lint:
     # Reviewed shared workflow pinned for this easyPDF release.
-    uses: storytold/craft-common-actions/.github/workflows/packaging-lint.yml@91e2c7617393ce0dfbe67ef5daf7254ade368203
+    uses: storytold/craft-common-actions/.github/workflows/packaging-lint.yml@f5141455aac7b2eb4708aa259d8ffcdf10fde939
 
   windows-install-policy:
     timeout-minutes: 10
