@@ -295,7 +295,9 @@ pub enum Command {
 #[derive(Clone, Debug)]
 pub enum Event {
     Connected(Snapshot),
+    ConnectedWithWarning { snapshot: Snapshot, warning: String },
     Disconnected,
+    DisconnectedWithWarning(String),
     Snapshot(Snapshot),
     CoverKitLoaded { id: u64, front_name: Option<String>, front: Option<Vec<u8>>, back_name: Option<String>, back: Option<Vec<u8>> },
     Models(Vec<String>),
@@ -303,6 +305,7 @@ pub enum Event {
     SharedDocumentLoaded { name: String, bytes: Vec<u8> },
     OpenUrl(String),
     Saved { message: String, snapshot: Option<Snapshot> },
+    OrganizationCreated { message: String, snapshot: Option<Snapshot> },
     Error(String),
 }
 
@@ -512,10 +515,21 @@ impl EasyPdfApp {
         for event in events {
             match event {
                 Event::Connected(snapshot) => self.connected.seed_snapshot(snapshot),
+                Event::ConnectedWithWarning { snapshot, warning } => {
+                    self.connected.seed_snapshot(snapshot);
+                    self.connected.error = Some(warning.clone());
+                    self.notify(warning);
+                }
                 Event::Disconnected => {
                     self.connected.clear_session();
                     self.cover_draft = Default::default();
                     self.notify_tr("Disconnected");
+                }
+                Event::DisconnectedWithWarning(warning) => {
+                    self.connected.clear_session();
+                    self.cover_draft = Default::default();
+                    self.connected.error = Some(warning.clone());
+                    self.notify(warning);
                 }
                 Event::Snapshot(snapshot) => {
                     self.connected.seed_snapshot(snapshot);
@@ -553,6 +567,15 @@ impl EasyPdfApp {
                     self.open_url(&url);
                 }
                 Event::Saved { message, snapshot } => {
+                    self.connected.busy = false;
+                    if let Some(snapshot) = snapshot {
+                        self.connected.seed_snapshot(snapshot);
+                    }
+                    self.notify(message);
+                }
+                Event::OrganizationCreated { message, snapshot } => {
+                    self.connected.new_organization_name.clear();
+                    self.connected.new_organization_slug.clear();
                     self.connected.busy = false;
                     if let Some(snapshot) = snapshot {
                         self.connected.seed_snapshot(snapshot);
@@ -643,7 +666,11 @@ pub(crate) fn sharing_modal(ctx: &egui::Context, app: &mut EasyPdfApp) {
 
 pub(crate) fn connected_page_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, page: ConnectedPage, t: &crate::theme::Tokens) -> bool {
     let Some(snapshot) = app.connected.snapshot.clone() else {
-        ui.label(tl!("Connect the desktop app to your easyPDF Web installation."));
+        if cfg!(target_arch = "wasm32") {
+            ui.label(tl!("The Web editor uses the account already signed in to this site."));
+        } else {
+            ui.label(tl!("Connect the desktop app to your easyPDF Web installation."));
+        }
         return crate::widgets::pill_button(ui, tl!("Close"), false).clicked();
     };
     let mut action = None;
@@ -838,6 +865,34 @@ fn valid_organization_slug(slug: &str) -> bool {
         && bytes.first().is_some_and(u8::is_ascii_alphanumeric)
         && bytes.last().is_some_and(u8::is_ascii_alphanumeric)
         && bytes.iter().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
+}
+
+fn organization_slug(name: &str) -> String {
+    let mut slug = String::new();
+    for character in name.chars() {
+        let mapped = match character.to_ascii_lowercase() {
+            'à' | 'á' | 'â' | 'ä' | 'ã' | 'å' => 'a',
+            'è' | 'é' | 'ê' | 'ë' => 'e',
+            'ì' | 'í' | 'î' | 'ï' => 'i',
+            'ò' | 'ó' | 'ô' | 'ö' | 'õ' => 'o',
+            'ù' | 'ú' | 'û' | 'ü' => 'u',
+            'ç' => 'c',
+            'ñ' => 'n',
+            value if value.is_ascii_alphanumeric() => value,
+            _ => '-',
+        };
+        if mapped == '-' {
+            if !slug.is_empty() && !slug.ends_with('-') {
+                slug.push('-');
+            }
+        } else {
+            slug.push(mapped);
+        }
+        if slug.len() >= 80 {
+            break;
+        }
+    }
+    slug.trim_matches('-').to_string()
 }
 
 fn management_modals(ctx: &egui::Context, app: &mut EasyPdfApp, t: &crate::theme::Tokens) -> Option<Command> {
@@ -1068,33 +1123,6 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                         action = Some(Command::Disconnect);
                     }
                 });
-                if !app.portal_url.is_empty() {
-                    section(ui, tl!("Web installation"));
-                    ui.label(
-                        egui::RichText::new(tl!("Enter the address of the easyPDF Web installation used by your company."))
-                            .small()
-                            .color(t.text_muted),
-                    );
-                    ui.add(crate::widgets::line(&mut app.portal_url).hint_text("https://easypdf.example.it"));
-                    ui.add(crate::widgets::line(&mut app.portal_email).hint_text(tl!("Email")));
-                    crate::widgets::password_line(
-                        ui,
-                        &mut app.connected.password,
-                        egui::Id::unique("portal-password-connected"),
-                        tl!("Password"),
-                        f32::INFINITY,
-                    );
-                    let ready = (app.portal_url.starts_with("http://") || app.portal_url.starts_with("https://"))
-                        && !app.portal_email.trim().is_empty()
-                        && !app.connected.password.is_empty();
-                    if ui.add_enabled_ui(ready, |ui| crate::widgets::pill_button(ui, tl!("Connect to this site"), true)).inner.clicked() {
-                        action = Some(Command::Connect {
-                            url: app.portal_url.trim_end_matches('/').to_string(),
-                            email: app.portal_email.trim().to_string(),
-                            password: std::mem::take(&mut app.connected.password),
-                        });
-                    }
-                }
                 if account.can_manage_accounts {
                     section(ui, tl!("Users"));
                     ui.horizontal(|ui| {
@@ -1314,7 +1342,14 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                     });
                     if account.role == "super_admin" {
                         ui.horizontal(|ui| {
-                            ui.add(crate::widgets::line(&mut app.connected.new_organization_name).hint_text(tl!("Organization name")));
+                            let previous_generated = organization_slug(&app.connected.new_organization_name);
+                            let name_changed =
+                                ui.add(crate::widgets::line(&mut app.connected.new_organization_name).hint_text(tl!("Organization name"))).changed();
+                            if name_changed
+                                && (app.connected.new_organization_slug.is_empty() || app.connected.new_organization_slug == previous_generated)
+                            {
+                                app.connected.new_organization_slug = organization_slug(&app.connected.new_organization_name);
+                            }
                             ui.add(crate::widgets::line(&mut app.connected.new_organization_slug).hint_text("slug-azienda"));
                             let valid = !app.connected.new_organization_name.trim().is_empty()
                                 && valid_organization_slug(app.connected.new_organization_slug.trim());
@@ -1328,35 +1363,41 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                     }
                 }
             } else {
-                ui.label(tl!("Connect the desktop app to your easyPDF Web installation."));
-                ui.add(crate::widgets::line(&mut app.portal_url).hint_text("https://pdf.example.it"));
-                ui.add(crate::widgets::line(&mut app.portal_email).hint_text(tl!("Email")));
-                crate::widgets::password_line(
-                    ui,
-                    &mut app.connected.password,
-                    egui::Id::unique("portal-password-disconnected"),
-                    tl!("Password"),
-                    f32::INFINITY,
-                );
-                let ready = app.portal_url.starts_with("http://") || app.portal_url.starts_with("https://");
-                if ui
-                    .add_enabled_ui(ready && !app.portal_email.trim().is_empty() && !app.connected.password.is_empty(), |ui| {
-                        crate::widgets::pill_button(ui, tl!("Connect"), true)
-                    })
-                    .inner
-                    .clicked()
-                {
-                    action = Some(Command::Connect {
-                        url: app.portal_url.trim_end_matches('/').to_string(),
-                        email: app.portal_email.trim().to_string(),
-                        password: std::mem::take(&mut app.connected.password),
-                    });
-                }
-                ui.label(
-                    egui::RichText::new(tl!("URL and email stay on this device. Password and access token stay only in memory."))
+                if cfg!(target_arch = "wasm32") {
+                    ui.label(tl!("The Web editor uses the account already signed in to this site."));
+                } else {
+                    ui.label(tl!("Connect the desktop app to your easyPDF Web installation."));
+                    ui.add(crate::widgets::line(&mut app.portal_url).hint_text("https://pdf.example.it"));
+                    ui.add(crate::widgets::line(&mut app.portal_email).hint_text(tl!("Email")));
+                    crate::widgets::password_line(
+                        ui,
+                        &mut app.connected.password,
+                        egui::Id::unique("portal-password-disconnected"),
+                        tl!("Password"),
+                        f32::INFINITY,
+                    );
+                    let ready = app.portal_url.starts_with("http://") || app.portal_url.starts_with("https://");
+                    if ui
+                        .add_enabled_ui(ready && !app.portal_email.trim().is_empty() && !app.connected.password.is_empty(), |ui| {
+                            crate::widgets::pill_button(ui, tl!("Connect"), true)
+                        })
+                        .inner
+                        .clicked()
+                    {
+                        action = Some(Command::Connect {
+                            url: app.portal_url.trim_end_matches('/').to_string(),
+                            email: app.portal_email.trim().to_string(),
+                            password: std::mem::take(&mut app.connected.password),
+                        });
+                    }
+                    ui.label(
+                        egui::RichText::new(tl!(
+                            "The password is never saved. The access session is protected by the operating-system credential store."
+                        ))
                         .small()
                         .color(t.text_muted),
-                );
+                    );
+                }
             }
         }
         PreferencesTab::Covers => {
@@ -1739,6 +1780,14 @@ mod tests {
         });
         assert_eq!(state.new_user_role, "user");
         assert_eq!(state.new_user_organization, Some(42));
+    }
+
+    #[test]
+    fn organization_name_generates_a_server_valid_slug() {
+        let slug = organization_slug("LFA Società Italiana");
+        assert_eq!(slug, "lfa-societa-italiana");
+        assert!(valid_organization_slug(&slug));
+        assert!(!valid_organization_slug("--"));
     }
 
     #[test]

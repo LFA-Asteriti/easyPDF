@@ -6,10 +6,52 @@ use std::time::Duration;
 use base64::Engine as _;
 use easypdf_ui_egui::connected::{AiTask, Command, CommandFn, Event, EventQueue, Snapshot};
 
-pub(crate) fn command_fn(events: EventQueue, ctx: egui::Context) -> CommandFn {
-    let base = Arc::new(Mutex::new(String::new()));
-    let token = Arc::new(Mutex::new(String::new()));
-    Box::new(move |command| {
+const CREDENTIAL_SERVICE: &str = "it.twinba.easypdf";
+const CREDENTIAL_ACCOUNT: &str = "web-session";
+
+fn credential_for(account: &str) -> Result<keyring::Entry, String> {
+    keyring::Entry::new(CREDENTIAL_SERVICE, account).map_err(|error| format!("Operating-system credential store is unavailable: {error}"))
+}
+
+fn credential() -> Result<keyring::Entry, String> {
+    credential_for(CREDENTIAL_ACCOUNT)
+}
+
+fn encode_session(url: &str, token: &str) -> String {
+    serde_json::json!({"url": url, "token": token}).to_string()
+}
+
+fn decode_session(encoded: &str) -> Option<(String, String)> {
+    let value: serde_json::Value = serde_json::from_str(encoded).ok()?;
+    let url = value.get("url")?.as_str()?.to_string();
+    let token = value.get("token")?.as_str()?.to_string();
+    (!url.is_empty() && !token.is_empty()).then_some((url, token))
+}
+
+fn load_session() -> Option<(String, String)> {
+    let encoded = credential().ok()?.get_password().ok()?;
+    decode_session(&encoded)
+}
+
+fn save_session(url: &str, token: &str) -> Result<(), String> {
+    let encoded = encode_session(url, token);
+    credential()?.set_password(&encoded).map_err(|error| format!("Could not protect the Web session: {error}"))
+}
+
+fn delete_session() -> Result<(), String> {
+    match credential()?.delete_credential() {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(error) => Err(format!("Could not remove the saved Web session: {error}")),
+    }
+}
+
+pub(crate) fn command_fn(events: EventQueue, ctx: egui::Context) -> (CommandFn, Option<String>) {
+    let restored = load_session();
+    let restored_url = restored.as_ref().map(|(url, _)| url.clone());
+    let (restored_base, restored_token) = restored.unwrap_or_default();
+    let base = Arc::new(Mutex::new(restored_base));
+    let token = Arc::new(Mutex::new(restored_token));
+    let command = Box::new(move |command| {
         let events = events.clone();
         let ctx = ctx.clone();
         let base = base.clone();
@@ -22,7 +64,8 @@ pub(crate) fn command_fn(events: EventQueue, ctx: egui::Context) -> CommandFn {
             }
             ctx.request_repaint();
         });
-    })
+    });
+    (command, restored_url)
 }
 
 fn agent() -> Result<ureq::Agent, String> {
@@ -53,6 +96,33 @@ fn set_lock(value: &Mutex<String>, new_value: String) {
     match value.lock() {
         Ok(mut value) => *value = new_value,
         Err(poisoned) => *poisoned.into_inner() = new_value,
+    }
+}
+
+fn clear_memory_session(base_store: &Mutex<String>, token_store: &Mutex<String>) {
+    set_lock(base_store, String::new());
+    set_lock(token_store, String::new());
+}
+
+fn connected_event(snapshot: Snapshot, persisted: Result<(), String>) -> Event {
+    match persisted {
+        Ok(()) => Event::Connected(snapshot),
+        Err(warning) => Event::ConnectedWithWarning {
+            snapshot,
+            warning: format!("Connected for this session, but automatic sign-in could not be protected: {warning}"),
+        },
+    }
+}
+
+fn disconnected_event(base_store: &Mutex<String>, token_store: &Mutex<String>, delete_persisted: impl FnOnce() -> Result<(), String>) -> Event {
+    // Logout must be immediate even when the operating-system credential service is temporarily
+    // unavailable. The warning tells the user that the persistent entry may still need removal.
+    clear_memory_session(base_store, token_store);
+    match delete_persisted() {
+        Ok(()) => Event::Disconnected,
+        Err(warning) => {
+            Event::DisconnectedWithWarning(format!("Disconnected, but the saved operating-system credential could not be removed: {warning}"))
+        }
     }
 }
 
@@ -110,18 +180,17 @@ fn request_document(base: &str, token: &str, id: u64) -> Result<Vec<u8>, String>
 
 fn execute(command: Command, base_store: &Mutex<String>, token_store: &Mutex<String>) -> Result<Event, String> {
     if matches!(command, Command::Disconnect) {
-        set_lock(base_store, String::new());
-        set_lock(token_store, String::new());
-        return Ok(Event::Disconnected);
+        return Ok(disconnected_event(base_store, token_store, delete_session));
     }
     if let Command::Connect { url, email, password } = command {
         let value = request(&url, "", "login", Some(serde_json::json!({"email": email, "password": password})))?;
         let token = value.get("token").and_then(serde_json::Value::as_str).ok_or("Access token missing")?.to_string();
         let snapshot =
             serde_json::from_value::<Snapshot>(value.get("snapshot").cloned().ok_or("Snapshot missing")?).map_err(|error| error.to_string())?;
+        let persisted = save_session(&url, &token);
         set_lock(base_store, url);
         set_lock(token_store, token);
-        return Ok(Event::Connected(snapshot));
+        return Ok(connected_event(snapshot, persisted));
     }
     let base = lock_value(base_store);
     let token = lock_value(token_store);
@@ -214,6 +283,10 @@ fn execute(command: Command, base_store: &Mutex<String>, token_store: &Mutex<Str
         "chatgpt-auth-start" => {
             Ok(Event::OpenUrl(value.get("url").and_then(serde_json::Value::as_str).ok_or("Authorization URL missing")?.to_string()))
         }
+        "organization-create" => Ok(Event::OrganizationCreated {
+            message: value.get("message").and_then(serde_json::Value::as_str).unwrap_or("Saved").to_string(),
+            snapshot: value.get("snapshot").cloned().map(serde_json::from_value::<Snapshot>).transpose().map_err(|error| error.to_string())?,
+        }),
         _ => Ok(Event::Saved {
             message: value.get("message").and_then(serde_json::Value::as_str).unwrap_or("Saved").to_string(),
             snapshot: value.get("snapshot").cloned().map(serde_json::from_value::<Snapshot>).transpose().map_err(|error| error.to_string())?,
@@ -233,12 +306,61 @@ mod tests {
     use super::*;
 
     #[test]
-    fn disconnect_forgets_base_and_token_without_network_access() {
+    fn saved_session_contains_only_url_and_token_and_round_trips() {
+        let encoded = encode_session("https://easypdf.example.test", "temporary-token");
+        assert!(!encoded.contains("password"));
+        assert_eq!(decode_session(&encoded), Some(("https://easypdf.example.test".to_string(), "temporary-token".to_string())));
+        assert_eq!(decode_session(r#"{"url":"","token":"temporary-token"}"#), None);
+    }
+
+    #[test]
+    #[ignore = "writes one temporary entry to the operating-system credential store"]
+    fn operating_system_credential_store_round_trips_a_temporary_session() {
+        let account = format!("web-session-test-{}", std::process::id());
+        let entry = credential_for(&account).expect("test credential entry");
+        let encoded = encode_session("https://easypdf.example.test", "temporary-token");
+        entry.set_password(&encoded).expect("write test credential");
+        let restored = entry.get_password().expect("read test credential");
+        assert_eq!(decode_session(&restored), decode_session(&encoded));
+        entry.delete_credential().expect("remove test credential");
+    }
+
+    #[test]
+    fn clearing_a_session_forgets_base_and_token_without_network_access() {
         let base = Mutex::new("https://example.test".to_string());
         let token = Mutex::new("secret-token".to_string());
 
-        assert!(matches!(execute(Command::Disconnect, &base, &token), Ok(Event::Disconnected)));
+        clear_memory_session(&base, &token);
         assert!(lock_value(&base).is_empty());
         assert!(lock_value(&token).is_empty());
+    }
+
+    #[test]
+    fn keyring_delete_failure_still_clears_the_live_session() {
+        let base = Mutex::new("https://example.test".to_string());
+        let token = Mutex::new("secret-token".to_string());
+        let event = disconnected_event(&base, &token, || {
+            assert!(lock_value(&base).is_empty(), "base URL must be cleared before keyring access");
+            assert!(lock_value(&token).is_empty(), "access token must be cleared before keyring access");
+            Err("keyring offline".into())
+        });
+
+        assert!(lock_value(&base).is_empty());
+        assert!(lock_value(&token).is_empty());
+        assert!(matches!(event, Event::DisconnectedWithWarning(message) if message.contains("keyring offline")));
+    }
+
+    #[test]
+    fn keyring_save_failure_keeps_only_the_live_session_and_warns() {
+        let snapshot: Snapshot = serde_json::from_value(serde_json::json!({
+            "account": {"id": 1, "email": "user@example.test", "display_name": "User", "role": "user", "organization_id": null,
+                "organization_name": null, "organization_role": null, "can_manage": false, "can_manage_accounts": false},
+            "users": [], "organizations": [], "cover_kits": [], "notifications": [], "shared_documents": [],
+            "ai": {"provider": "", "auth_mode": "", "base_url": "", "model": "", "has_secret": false},
+            "ai_source": "personal", "ai_shared_available": false, "ai_shared_user_ids": [], "csrf": null
+        }))
+        .expect("snapshot fixture");
+        let event = connected_event(snapshot, Err("keyring offline".into()));
+        assert!(matches!(event, Event::ConnectedWithWarning { warning, .. } if warning.contains("keyring offline")));
     }
 }

@@ -26,7 +26,9 @@ function cover_preview_base64(array $tenant, ?string $storageName): ?string
     if ($storageName === null || $storageName === '') return null;
     $pdf = cover_file_path($tenant, $storageName);
     $png = cover_preview_path($tenant, $storageName);
-    if (!is_file($png) && is_file($pdf)) {
+    // Shared hosting commonly disables process creation. A missing preview must never make the
+    // authenticated account snapshot fail: the editor can still list, load and apply the kit.
+    if (!is_file($png) && is_file($pdf) && function_exists('proc_open')) {
         $binary = (string) env_value('EASYPDF_CLI', '/opt/easypdf/bin/easypdf-cli');
         $pipes = [];
         $process = proc_open([$binary, 'render', $pdf, '--page', '1', '--dpi', '24', '--out', $png], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
@@ -201,6 +203,9 @@ function selected_cover_set(array $tenant, ?int $requestedId): array
 
 function apply_cover_set(array $tenant, array $set, array $uploadedPdf): array
 {
+    if (!function_exists('proc_open')) {
+        throw new RuntimeException('Il motore PDF lato server non è disponibile. Applica il kit direttamente nell’editor easyPDF.');
+    }
     [$inputTmp, $originalName] = validate_pdf_upload($uploadedPdf, 'Documento');
     $jobId = random_id();
     $job = storage_path('jobs/' . $tenant['storage'] . "/{$tenant['user_id']}/{$jobId}");

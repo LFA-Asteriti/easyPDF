@@ -15,6 +15,8 @@ easypdf-ui-egui = { workspace = true }
 ureq = { version = "3.4", default-features = false, features = ["rustls-no-provider", "_ring"] }
 rustls-native-certs = "0.8"
 base64 = "0.22"
+# The Web access token is persisted only in the operating-system credential store.
+keyring = { version = "3.6.3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 # `build_info`: the version and compile-time build label for `--version` and the log.
 easypdf-engine = { workspace = true }
 # wgpu draws; OpenGL (glow) is the fallback when wgpu can't start on an old or unusual GPU or

@@ -449,6 +449,10 @@ async fn send_connected_command(command: easypdf_ui_egui::connected::Command, cs
         "chatgpt-auth-start" => {
             Ok(Event::OpenUrl(value.get("url").and_then(serde_json::Value::as_str).ok_or("authorization URL missing")?.to_string()))
         }
+        "organization-create" => Ok(Event::OrganizationCreated {
+            message: value.get("message").and_then(serde_json::Value::as_str).unwrap_or("Saved").to_string(),
+            snapshot: value.get("snapshot").cloned().map(serde_json::from_value::<Snapshot>).transpose().map_err(|error| error.to_string())?,
+        }),
         _ => Ok(Event::Saved {
             message: value.get("message").and_then(serde_json::Value::as_str).unwrap_or("Saved").to_string(),
             snapshot: value.get("snapshot").cloned().map(serde_json::from_value::<Snapshot>).transpose().map_err(|error| error.to_string())?,

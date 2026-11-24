@@ -117,7 +117,16 @@ easyPDF opens files from strangers, and people trust it with their work. A malfo
 - **Prove it.** Every crash fix comes with a small synthetic regression test that panicked before the fix. Turn fuzzer findings (`cargo xtask fuzz`) into such tests before fixing them.
 - **Enforced by clippy.** Root `clippy.toml` lets tests use `unwrap`/`expect`/`panic!`. A crate that is clean carries `#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]`; new crates start with it.
 
-## 5. Everything else
+## 5. Efficient Rust validation
+
+- Complete a coherent batch of related changes before starting expensive validation. Do not split ordinary implementation work into micro-phases.
+- During implementation, use the smallest relevant checks: `cargo fmt` on touched files, the affected package or module tests, and `cargo check` for the affected native or WASM target. Do not rebuild the whole workspace, desktop app, WASM bundle or Docker image after every small correction.
+- Before an expensive build, search for and fix all instances of the same compile or API pattern so that one build validates the complete batch.
+- Run one full build only after the implementation and targeted regression tests are complete. Rebuild Docker only when files included in its image changed; a desktop-only change does not justify rebuilding the Web image.
+- If the final build exposes an error, correct it and rerun only the failed package or stage first. Repeat the global build only once, after the focused check is green.
+- Do not interrupt a healthy `rustc`, linker or `wasm-opt` process merely because it is quiet. Confirm whether it is active before stopping it; interrupted incremental artifacts can turn a small check into a full rebuild.
+
+## 6. Everything else
 
 
 Follow `CLAUDE.md`. It covers quality gates, layering, commit rules and how to run and look at the app.
