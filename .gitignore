@@ -1,10 +1,15 @@
 *~
 plan/
 /target
+/target-*
 /dist
 /corpus
 /log
+/tmp
+/upstream
+/.vscode
 .DS_Store
 /fuzz-out
 /assets/models
 .claude/
+

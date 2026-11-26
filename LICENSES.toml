@@ -16,7 +16,7 @@ sha256 = "cd7032ea33b71427f188e34ffb4aee9d6868a57fd196037c5c8b2be03a2a0352"
 [[document]]
 source = "NOTICE"
 destination = "NOTICE"
-sha256 = "199714cf704c9b72ecca3bc693855cfba531ac3cb79b536d396bfe9650f03752"
+sha256 = "66d36f0ca430b9c6af042d7adc53558db174ccb6d2648d1e513a2adde4b6af5c"
 
 [[document]]
 source = "assets/easypdf-fonts/fonts/biz-ud-mincho/OFL.txt"
@@ -147,7 +147,7 @@ sha256 = "0aef534f5885c2f30b360ed5fb09ea4661a40ec62845c35f8354e26d7977d87d"
 [[document]]
 source = "assets/LICENSE-easyPDF-brand.txt"
 destination = "assets/LICENSE-easyPDF-brand.txt"
-sha256 = "62bf8b1241cbc05dfe415e2a25535efe2194c7f2f26d7fefb496e3ae4074d42a"
+sha256 = "e0d326edef2e67d9f501685e0c342fa405052533bf4ea024f52bf0cc47406b8d"
 
 [[document]]
 source = "assets/app-icon/LICENSE-Devicon-MIT.txt"
@@ -286,3 +286,4 @@ crate = "hayro-interpret"
 path = "src/font/generated/metrics.rs"
 licence = "MIT OR Apache-2.0"
 documents = ["vendor/hayro-interpret/LICENSE-MIT", "vendor/hayro-interpret/LICENSE-APACHE"]
+

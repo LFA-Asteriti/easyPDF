@@ -1,8 +1,11 @@
 target
 target-*
 .git
+.vscode
 .cargo-cache
 dist
+tmp
+upstream
 web-portal/storage
 plan
 EASYPDF-STAGING-*
