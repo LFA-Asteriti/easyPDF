@@ -1778,7 +1778,7 @@ milestone = "M3"
 status = "planned"
 commands = []
 tools = []
-evidence = ["crates/ui-egui/tests/it/updates.rs::unsigned_update_channel_stays_off_even_when_requested"]
+evidence = ["crates/ui-egui/tests/it/updates.rs::requested_update_check_uses_the_easy_pdf_source"]
 notes = "Disabled until easyPDF has its own signed update channel. No menu command or startup network check is available."
 
 [[feature]]
