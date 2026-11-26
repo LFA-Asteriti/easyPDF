@@ -15,7 +15,7 @@ release: ${RELEASE}
 section: graphics
 priority: optional
 maintainer: ${EASYPDF_MAINTAINER}
-vendor: Twinba Srl
+vendor: Massimo Bertolucci
 homepage: https://easypdf.asteritilfa.it
 license: MIT OR Apache-2.0
 description: |-

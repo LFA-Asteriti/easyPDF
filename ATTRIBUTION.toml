@@ -2399,7 +2399,7 @@ title = 'Lucide icon "move-horizontal"'
 usage = "UI icon, embedded via crates/ui-egui/src/icon_data.rs"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2410,7 +2410,7 @@ title = "easyPDF app icon (master vector)"
 usage = "Master artwork; every other app-icon file is rendered from it (packaging/icons.sh)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2421,7 +2421,7 @@ title = "easyPDF app icon (light vector)"
 usage = "README header and assets/app-icon/README.md"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2432,7 +2432,7 @@ title = "easyPDF app icon, 1024 px on Apple's icon grid"
 usage = "Runtime window/Dock icon on macOS (apps/easypdf/src/main.rs)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2443,7 +2443,7 @@ title = "easyPDF app icon (macOS .icns)"
 usage = "macOS app bundle icon"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2454,7 +2454,7 @@ title = "easyPDF app icon (Windows .ico, 16-256 px)"
 usage = "Embedded in easypdf.exe by apps/easypdf/build.rs (Explorer, taskbar, Start menu, Alt-Tab)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2465,7 +2465,7 @@ title = "easyPDF PDF document icon (master vector)"
 usage = "Master artwork for the Windows PDF file type icon; rendered by packaging/icons.sh, without fonts or external images"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2476,7 +2476,7 @@ title = "easyPDF PDF document icon (Windows .ico, 16-256 px)"
 usage = "Embedded in easypdf.exe as resource 2; the Windows installer uses it for easyPDF.Document and Applications/easypdf.exe PDF file associations"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2487,7 +2487,7 @@ title = "easyPDF app icon, 16 px"
 usage = "Linux hicolor theme icon (packaging/linux/it.twinba.easypdf.desktop)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2498,7 +2498,7 @@ title = "easyPDF app icon, 24 px"
 usage = "Linux hicolor theme icon (packaging/linux/it.twinba.easypdf.desktop)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2509,7 +2509,7 @@ title = "easyPDF app icon, 32 px"
 usage = "Linux hicolor theme icon (packaging/linux/it.twinba.easypdf.desktop)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2520,7 +2520,7 @@ title = "easyPDF app icon, 48 px"
 usage = "Linux hicolor theme icon (packaging/linux/it.twinba.easypdf.desktop)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2531,7 +2531,7 @@ title = "easyPDF app icon, 64 px"
 usage = "Linux hicolor theme icon (packaging/linux/it.twinba.easypdf.desktop)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2542,7 +2542,7 @@ title = "easyPDF app icon, 128 px"
 usage = "Linux hicolor theme icon (packaging/linux/it.twinba.easypdf.desktop)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2553,7 +2553,7 @@ title = "easyPDF app icon, 256 px"
 usage = "Linux hicolor theme icon (packaging/linux/it.twinba.easypdf.desktop); runtime window icon on Windows and Linux (apps/easypdf/src/main.rs)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2564,7 +2564,7 @@ title = "easyPDF app icon, 512 px"
 usage = "Linux hicolor theme icon (packaging/linux/it.twinba.easypdf.desktop)"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "icon"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
@@ -2608,35 +2608,35 @@ title = "Linux platform logo"
 usage = "Linux platform indicator on the public homepage and download card"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "logo"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
 path = "web-portal/public/assets/easyPDF-logo.svg"
 sha256 = "7705128f5fea5d3f51a6fc2c85133afb905fd5ab4951def3400f686a72d2920a"
-source = "Brand assets supplied by Twinba Srl, 2026-10-18"
+source = "Brand assets supplied by Massimo Bertolucci, 2026-10-18"
 title = "easyPDF web portal vertical wordmark"
 usage = "Protected web portal login"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "logo"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
 path = "web-portal/public/assets/easyPDF-logo-h.svg"
 sha256 = "40f3e9e5c6bbd3693437ae2ba78275680c7c11003c2c584e81a52605070c2172"
-source = "Brand assets supplied by Twinba Srl, 2026-10-18"
+source = "Brand assets supplied by Massimo Bertolucci, 2026-10-18"
 title = "easyPDF web portal horizontal wordmark"
 usage = "Protected web portal header"
 
 [[asset]]
-author = "Twinba Srl"
+author = "Massimo Bertolucci"
 kind = "logo"
 licence = "LicenseRef-Twinba-Trademark"
 licence_file = "assets/LICENSE-easyPDF-brand.txt"
 path = "web-portal/public/assets/favicon.ico"
 sha256 = "19f4991e55275b57aa5608207eac25129be8964055d21deb374a2e85a980fb60"
-source = "Brand assets supplied by Twinba Srl, 2026-10-18"
+source = "Brand assets supplied by Massimo Bertolucci, 2026-10-18"
 title = "easyPDF web portal favicon"
 usage = "Protected web portal browser icon"
 

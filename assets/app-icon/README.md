@@ -3,7 +3,7 @@
 Every icon in this directory is derived without visual changes from the official easyPDF mark in
 `assets/easyPDF-icona.svg` and `assets/easyPDF-icona.png`.
 
-The mark is owned by Twinba Srl and covered by
+The mark is owned by Massimo Bertolucci and covered by
 [`assets/LICENSE-easyPDF-brand.txt`](../LICENSE-easyPDF-brand.txt). It must be used unmodified and
 only for easyPDF.
 

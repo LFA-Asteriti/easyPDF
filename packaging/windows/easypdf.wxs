@@ -3,8 +3,8 @@
   <?ifndef HasEasyPdfFontLicences ?>
   <?define HasEasyPdfFontLicences=0 ?>
   <?endif?>
-  <Package Name="easyPDF" Manufacturer="Twinba Srl" Version="$(var.Version)" UpgradeCode="B8626BC0-B37E-4D1A-A09A-CE102257685F" Scope="perUserOrMachine" Compressed="yes" Language="1033">
-    <SummaryInformation Description="easyPDF PDF workbench" Manufacturer="Twinba Srl" />
+  <Package Name="easyPDF" Manufacturer="Massimo Bertolucci" Version="$(var.Version)" UpgradeCode="B8626BC0-B37E-4D1A-A09A-CE102257685F" Scope="perUserOrMachine" Compressed="yes" Language="1033">
+    <SummaryInformation Description="easyPDF PDF workbench" Manufacturer="Massimo Bertolucci" />
     <?include $(sys.SOURCEFILEDIR)install-policy.wxi?>
     <!-- HKLM registrations must never point into a per-user installation (#305). Allow removal
          of an existing installation even if an older MSI let it install per-user. -->

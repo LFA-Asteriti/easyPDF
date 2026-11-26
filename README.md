@@ -3,11 +3,11 @@
   <img src="web-portal/public/assets/easyPDF-logo-h.svg" alt="easyPDF" width="360">
 </p>
 
-# easyPDF 2.0
+# easyPDF
 
 [Sito ufficiale](https://easypdf.asteritilfa.it/) · [Documentazione](https://easypdf.asteritilfa.it/documentazione/) · [Versioni e download](https://github.com/LFA-Asteriti/easyPDF/releases)
 
-easyPDF è la piattaforma Twinba Srl per leggere, modificare, organizzare, firmare,
+easyPDF è la piattaforma per leggere, modificare, organizzare, firmare,
 proteggere e convertire documenti PDF su desktop e sul web.
 
 ## Release e download
@@ -84,7 +84,7 @@ trunk serve
 
 ## Licenze e attribuzioni
 
-Il marchio e gli asset easyPDF sono proprietà di Twinba Srl e seguono
+Il marchio e gli asset easyPDF sono proprietà di Massimo Bertolucci e seguono
 [`assets/LICENSE-easyPDF-brand.txt`](assets/LICENSE-easyPDF-brand.txt).
 
 Il progetto incorpora componenti di terze parti e codice derivato distribuito secondo i rispettivi

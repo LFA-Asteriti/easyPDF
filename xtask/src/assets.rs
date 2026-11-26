@@ -36,7 +36,7 @@ pub const ALLOWED_LICENCES: &[&str] = &[
 ];
 
 /// The closed list of Adobe-authored, non-visual technical data (AGENTS.md §1.1): (crate, path).
-/// Twinba Srl's easyPDF brand marks: shipped in the app and docs, but
+/// Massimo Bertolucci's easyPDF brand marks: shipped in the app and docs, but
 /// not licensed for reuse by forks. Allowed only for reviewed `logo` and `icon` entries under `assets/`
 /// (AGENTS.md §1.2).
 pub const BRAND_LICENCE: &str = "LicenseRef-Twinba-Trademark";
@@ -247,7 +247,7 @@ pub fn check(root: &Path, m: &Manifest, repo_files: &[String], lock: &BTreeSet<(
             problems.push(format!("{}: listed twice", a.path));
         }
         let brand = a.licence == BRAND_LICENCE
-            && a.author == "Twinba Srl"
+            && a.author == "Massimo Bertolucci"
             && a.licence_file == "assets/LICENSE-easyPDF-brand.txt"
             && match a.kind.as_str() {
                 "logo" => {
@@ -591,7 +591,7 @@ mod tests {
             ("docs/brand/foreign-logo.svg", "logo", false),
             ("packaging/macos/dmg/background.svg", "image", false),
         ] {
-            let mut a = asset(path, "Twinba Srl", kind, BRAND_LICENCE);
+            let mut a = asset(path, "Massimo Bertolucci", kind, BRAND_LICENCE);
             a.licence_file = "assets/LICENSE-easyPDF-brand.txt".into();
             let m = Manifest { asset: vec![a], ..Default::default() };
             let p = check(&root, &m, &[], &BTreeSet::new());
