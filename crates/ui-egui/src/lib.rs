@@ -9,8 +9,7 @@
 // The settings object in `persist` is one `json!` literal past the default limit of 128.
 #![recursion_limit = "256"]
 
-/// easyPDF identity retained for compilation; update checks stay disabled until an
-/// easyPDF-owned, signed release channel is configured.
+/// easyPDF identity used by the official, manual-download update channel.
 #[cfg(not(target_arch = "wasm32"))]
 pub const UPDATE_APP: craft_update::app::App = craft_update::app::App {
     id: "easypdf",

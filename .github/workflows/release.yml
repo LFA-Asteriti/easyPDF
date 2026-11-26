@@ -202,4 +202,4 @@ jobs:
             echo "Release $tag already exists; review it instead of overwriting its assets" >&2
             exit 1
           fi
-          gh release create "$tag" dist/release/* --draft --prerelease --title "easyPDF $tag" --notes-file dist/release/RELEASE-NOTES.txt --target "$GITHUB_SHA"
+          gh release create "$tag" dist/release/* --draft --title "easyPDF $tag" --notes-file dist/release/RELEASE-NOTES.txt --target "$GITHUB_SHA"

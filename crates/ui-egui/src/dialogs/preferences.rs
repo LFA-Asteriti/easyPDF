@@ -559,6 +559,18 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &Toke
 /// Content for Card 1: General & Interface
 fn card_general(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &Tokens, ctx: &mut PrefSearchContext) {
     ui.horizontal(|ui| {
+        ctx.label_primary(ui, &format!("{}: {}", tl!("Version"), easypdf_engine::build_info::version()), t);
+        ui.add_space(12.0);
+        #[cfg(not(target_arch = "wasm32"))]
+        if ui.button(tl!("Check for updates")).clicked() {
+            app.check_for_updates();
+        }
+        #[cfg(target_arch = "wasm32")]
+        ctx.label_secondary(ui, tl!("The web version is updated by the server."), t);
+    });
+    ui.add_space(8.0);
+
+    ui.horizontal(|ui| {
         let label = ctx.label_primary(ui, tl!("Interface language"), t);
         let (selected, picker) = {
             let drawable = |text: &str| picker_text_is_drawable(ui, text);

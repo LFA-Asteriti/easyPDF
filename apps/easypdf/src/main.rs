@@ -379,7 +379,7 @@ fn app_creator<'a>(
         {
             app.motion.source = Some(motion::source());
         }
-        app.set_startup_update_check(false);
+        app.set_startup_update_check(true);
         let (portal_command, restored_portal_url) = portal::command_fn(app.connected_events.clone(), cc.egui_ctx.clone());
         app.connected_command = Some(portal_command);
         if let Some(url) = restored_portal_url {

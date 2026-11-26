@@ -1,4 +1,4 @@
-//! An upstream update feed must not be reachable in the easyPDF staging build.
+//! The easyPDF update flow uses its replaceable, official release source.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -8,7 +8,7 @@ use easypdf_ui_egui::updates::UpdateSource;
 use egui_kittest::Harness;
 
 #[test]
-fn unsigned_update_channel_stays_off_even_when_requested() {
+fn requested_update_check_uses_the_easy_pdf_source() {
     let calls = Arc::new(AtomicUsize::new(0));
     let observed = calls.clone();
     let source: UpdateSource = Arc::new(move || {
@@ -18,11 +18,10 @@ fn unsigned_update_channel_stays_off_even_when_requested() {
     let mut harness = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(move |_cc| {
         let mut app = EasyPdfApp::new();
         app.set_update_source(source);
-        app.set_startup_update_check(true);
+        app.set_startup_update_check(false);
         app
     });
     harness.state_mut().check_for_updates();
-    assert!(!harness.state_mut().execute("help.check_updates"));
-    harness.run_steps(4);
-    assert_eq!(calls.load(Ordering::SeqCst), 0, "no unsigned release request may start");
+    harness.run_steps(8);
+    assert_eq!(calls.load(Ordering::SeqCst), 1, "the official release source is checked once");
 }
