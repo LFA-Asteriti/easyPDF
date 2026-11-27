@@ -114,6 +114,15 @@ const IT_EASYPDF_TRANSLATIONS: &[(&str, &str)] = &[
     ("Connect to this site", "Collega a questo sito"),
     ("Connect your account to synchronize cover kits.", "Collega l’account per sincronizzare i kit cover."),
     ("Continue with ChatGPT", "Continua con ChatGPT"),
+    ("Connect another ChatGPT account", "Collega un altro account ChatGPT"),
+    (
+        "ChatGPT OAuth for the web is in development. Other AI providers are available.",
+        "ChatGPT OAuth per il Web è in lavorazione. Gli altri provider AI sono disponibili.",
+    ),
+    (
+        "Running this action sends the document text to OpenAI using your ChatGPT plan.",
+        "Quando premi Esegui, il testo del documento viene inviato a OpenAI usando il tuo piano ChatGPT.",
+    ),
     ("Cover kits are shared with every account in the organization.", "I kit cover sono condivisi con tutti gli account dell’organizzazione."),
     ("Create a concise summary of the open document.", "Crea un riepilogo conciso del documento aperto."),
     ("Create cover kit", "Crea kit cover"),
