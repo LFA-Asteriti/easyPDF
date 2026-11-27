@@ -34,6 +34,7 @@ use easypdf_ui_egui::EasyPdfApp;
 
 #[cfg(target_os = "macos")]
 mod apple_events;
+mod chatgpt;
 mod compositor_gpu;
 mod decorations;
 mod logging;
@@ -380,8 +381,10 @@ fn app_creator<'a>(
             app.motion.source = Some(motion::source());
         }
         app.set_startup_update_check(true);
-        let (portal_command, restored_portal_url) = portal::command_fn(app.connected_events.clone(), cc.egui_ctx.clone());
+        let (portal_command, restored_portal_url, local_chatgpt) = portal::command_fn(app.connected_events.clone(), cc.egui_ctx.clone());
         app.connected_command = Some(portal_command);
+        app.connected.local_chatgpt_available = true;
+        app.connected.set_local_chatgpt_profile(local_chatgpt);
         if let Some(url) = restored_portal_url {
             app.portal_url = url;
             app.connected_send(easypdf_ui_egui::connected::Command::Refresh);

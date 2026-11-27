@@ -164,6 +164,8 @@ pub struct Snapshot {
     #[serde(default)]
     pub shared_documents: Vec<SharedDocumentInfo>,
     pub csrf: Option<String>,
+    #[serde(default)]
+    pub web_chatgpt_available: bool,
 }
 
 fn personal_ai_source() -> String {
@@ -176,6 +178,31 @@ pub enum AiTask {
     Summary,
     Ask,
     Translate,
+}
+
+#[derive(Clone, Debug)]
+pub enum LocalChatGptCommand {
+    SignIn,
+    SignInNew,
+    SignOut,
+    SetActive(bool),
+    LoadModels,
+    SaveModel(String),
+    Run { task: AiTask, text: String, question: String, language: String },
+}
+
+#[derive(Clone, Debug)]
+pub struct LocalChatGptProfile {
+    pub account: String,
+    pub model: String,
+    pub active: bool,
+    pub connected: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct LocalChatGptModel {
+    pub slug: String,
+    pub label: String,
 }
 
 #[derive(Clone, Debug)]
@@ -271,6 +298,7 @@ pub enum Command {
         secret: String,
     },
     StartChatGptAuth,
+    LocalChatGpt(LocalChatGptCommand),
     RunAi {
         task: AiTask,
         text: String,
@@ -301,6 +329,9 @@ pub enum Event {
     Snapshot(Snapshot),
     CoverKitLoaded { id: u64, front_name: Option<String>, front: Option<Vec<u8>>, back_name: Option<String>, back: Option<Vec<u8>> },
     Models(Vec<String>),
+    LocalChatGptProfile(Option<LocalChatGptProfile>),
+    LocalChatGptModels(Vec<LocalChatGptModel>),
+    LocalChatGptSignedOut { profile: Option<LocalChatGptProfile>, warning: Option<String> },
     AiResult(String),
     SharedDocumentLoaded { name: String, bytes: Vec<u8> },
     OpenUrl(String),
@@ -347,6 +378,10 @@ pub struct State {
     pub ai_model: String,
     pub ai_secret: String,
     pub ai_models: Vec<String>,
+    pub local_chatgpt_available: bool,
+    pub local_chatgpt_profile: Option<LocalChatGptProfile>,
+    pub local_chatgpt_models: Vec<LocalChatGptModel>,
+    pub local_chatgpt_model_draft: String,
     pub ai_shared_user_ids: BTreeSet<u64>,
     pub ai_question: String,
     pub ai_language: String,
@@ -359,6 +394,37 @@ pub struct State {
 }
 
 impl State {
+    pub fn set_local_chatgpt_profile(&mut self, profile: Option<LocalChatGptProfile>) {
+        if let Some(profile) = &profile {
+            self.local_chatgpt_model_draft.clone_from(&profile.model);
+        }
+        self.local_chatgpt_profile = profile;
+        if self.local_chatgpt_active() {
+            self.select_local_chatgpt();
+        }
+    }
+
+    fn local_chatgpt_active(&self) -> bool {
+        self.local_chatgpt_available && self.ai_source != "organization" && self.local_chatgpt_profile.as_ref().is_some_and(|profile| profile.active)
+    }
+
+    fn local_chatgpt_requested(&self) -> bool {
+        self.local_chatgpt_available && self.ai_source != "organization" && self.ai_provider == "openai" && self.ai_auth_mode == "chatgpt_oauth"
+    }
+
+    fn select_local_chatgpt(&mut self) {
+        self.ai_provider = "openai".into();
+        self.ai_auth_mode = "chatgpt_oauth".into();
+    }
+
+    fn ai_ready(&self) -> bool {
+        if self.local_chatgpt_active() {
+            self.local_chatgpt_profile.as_ref().is_some_and(|profile| profile.connected && !profile.model.is_empty())
+        } else {
+            self.snapshot.as_ref().is_some_and(|snapshot| !snapshot.ai.model.is_empty())
+        }
+    }
+
     fn clear_session(&mut self) {
         self.snapshot = None;
         self.busy = false;
@@ -380,12 +446,17 @@ impl State {
         self.ai_models.clear();
         self.ai_shared_user_ids.clear();
         self.ai_result.clear();
+        self.ai_source = personal_ai_source();
+        if self.local_chatgpt_active() {
+            self.select_local_chatgpt();
+        }
         self.share_dialog = false;
         self.share_recipient_ids.clear();
         self.next_background_refresh = 0.0;
     }
 
     pub fn seed_snapshot(&mut self, snapshot: Snapshot) {
+        let keep_local_draft = self.local_chatgpt_requested() && snapshot.ai_source != "organization";
         self.selected_cover = snapshot.cover_kits.iter().find(|kit| kit.is_default).or_else(|| snapshot.cover_kits.first()).map(|kit| kit.id);
         self.selected_user_ids.retain(|id| snapshot.users.iter().any(|user| user.id == *id));
         self.selected_organization_ids.retain(|id| snapshot.organizations.iter().any(|organization| organization.id == *id));
@@ -398,6 +469,11 @@ impl State {
         self.ai_provider = snapshot.ai.provider.clone();
         self.ai_source = snapshot.ai_source.clone();
         self.ai_auth_mode = snapshot.ai.auth_mode.clone();
+        if self.local_chatgpt_active() || keep_local_draft {
+            self.select_local_chatgpt();
+        } else if self.local_chatgpt_available && self.ai_auth_mode == "chatgpt_oauth" {
+            self.ai_auth_mode = "api_key".into();
+        }
         self.ai_base_url = snapshot.ai.base_url.clone();
         self.ai_model = snapshot.ai.model.clone();
         self.ai_shared_user_ids = snapshot.ai_shared_user_ids.iter().copied().collect();
@@ -489,12 +565,15 @@ impl EasyPdfApp {
                 return;
             }
         };
-        self.connected_send(Command::RunAi {
-            task: self.connected.ai_task,
-            text,
-            question: self.connected.ai_question.trim().to_string(),
-            language: self.connected.ai_language.trim().to_string(),
-        });
+        let task = self.connected.ai_task;
+        let question = self.connected.ai_question.trim().to_string();
+        let language = self.connected.ai_language.trim().to_string();
+        let command = if self.connected.local_chatgpt_active() {
+            Command::LocalChatGpt(LocalChatGptCommand::Run { task, text, question, language })
+        } else {
+            Command::RunAi { task, text, question, language }
+        };
+        self.connected_send(command);
     }
 
     pub fn connected_send(&mut self, command: Command) {
@@ -550,6 +629,27 @@ impl EasyPdfApp {
                 Event::Models(models) => {
                     self.connected.busy = false;
                     self.connected.ai_models = models;
+                }
+                Event::LocalChatGptProfile(profile) => {
+                    self.connected.busy = false;
+                    if profile.is_none() {
+                        self.connected.local_chatgpt_models.clear();
+                        self.connected.local_chatgpt_model_draft.clear();
+                        self.connected.ai_result.clear();
+                    }
+                    self.connected.set_local_chatgpt_profile(profile);
+                }
+                Event::LocalChatGptModels(models) => {
+                    self.connected.busy = false;
+                    self.connected.local_chatgpt_models = models;
+                }
+                Event::LocalChatGptSignedOut { profile, warning } => {
+                    self.connected.busy = false;
+                    self.connected.local_chatgpt_models.clear();
+                    self.connected.local_chatgpt_model_draft.clear();
+                    self.connected.ai_result.clear();
+                    self.connected.set_local_chatgpt_profile(profile);
+                    self.connected.error = warning;
                 }
                 Event::AiResult(result) => {
                     self.connected.busy = false;
@@ -783,6 +883,9 @@ pub(crate) fn ai_dialog_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crate:
         AiTask::Translate => tl!("Translate"),
     };
     ui.label(egui::RichText::new(title).font(crate::theme::semibold(18.0)));
+    if app.connected.local_chatgpt_active() {
+        ui.label(tl!("Running this action sends the document text to OpenAI using your ChatGPT plan."));
+    }
     match app.connected.ai_task {
         AiTask::Ask => {
             ui.add(crate::widgets::block(&mut app.connected.ai_question).desired_rows(3).hint_text(tl!("Question")));
@@ -815,9 +918,8 @@ pub(crate) fn ai_dialog_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crate:
     ui.add_space(10.0);
     let mut close = false;
     ui.horizontal(|ui| {
-        let ready = !app.connected.busy
-            && app.connected.snapshot.as_ref().is_some_and(|snapshot| !snapshot.ai.model.is_empty())
-            && (app.connected.ai_task != AiTask::Ask || !app.connected.ai_question.trim().is_empty());
+        let ready =
+            !app.connected.busy && app.connected.ai_ready() && (app.connected.ai_task != AiTask::Ask || !app.connected.ai_question.trim().is_empty());
         if ui.add_enabled_ui(ready, |ui| crate::widgets::pill_button(ui, tl!("Run"), true)).inner.clicked() {
             app.run_ai();
         }
@@ -825,7 +927,7 @@ pub(crate) fn ai_dialog_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crate:
             close = true;
         }
     });
-    if !app.connected.snapshot.as_ref().is_some_and(|snapshot| !snapshot.ai.model.is_empty()) {
+    if !app.connected.ai_ready() {
         ui.label(egui::RichText::new(tl!("Configure an AI provider in Preferences first.")).small().color(t.text_muted));
     }
     close
@@ -834,6 +936,55 @@ pub(crate) fn ai_dialog_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crate:
 fn section(ui: &mut egui::Ui, title: &str) {
     ui.add_space(8.0);
     ui.label(egui::RichText::new(title).font(crate::theme::semibold(14.0)));
+}
+
+fn local_chatgpt_panel(ui: &mut egui::Ui, state: &mut State) -> Option<Command> {
+    let mut action = None;
+    ui.add_enabled_ui(!state.busy, |ui| {
+        section(ui, "ChatGPT OAuth");
+        if let Some(profile) = state.local_chatgpt_profile.as_ref().filter(|profile| profile.connected) {
+            ui.label(&profile.account);
+            ui.horizontal(|ui| {
+                if crate::widgets::pill_button(ui, tl!("Load models"), false).clicked() {
+                    action = Some(LocalChatGptCommand::LoadModels);
+                }
+                if crate::widgets::pill_button(ui, tl!("Continue with ChatGPT"), false).clicked() {
+                    action = Some(LocalChatGptCommand::SignIn);
+                }
+                if crate::widgets::pill_button(ui, tl!("Disconnect"), false).clicked() {
+                    action = Some(LocalChatGptCommand::SignOut);
+                }
+            });
+            let selected = state.local_chatgpt_models.iter().find(|model| model.slug == state.local_chatgpt_model_draft);
+            let label = selected
+                .map(|model| model.label.as_str())
+                .or_else(|| (!state.local_chatgpt_model_draft.is_empty()).then_some(state.local_chatgpt_model_draft.as_str()));
+            craft_ui::ComboBox::from_id_salt("local-chatgpt-model").selected_text(label.unwrap_or(tl!("Choose model"))).show_ui(ui, |ui| {
+                for model in &state.local_chatgpt_models {
+                    ui.selectable_value(&mut state.local_chatgpt_model_draft, model.slug.clone(), &model.label);
+                }
+            });
+            let valid_model = state.local_chatgpt_models.iter().any(|model| model.slug == state.local_chatgpt_model_draft);
+            if ui.add_enabled_ui(valid_model, |ui| crate::widgets::pill_button(ui, tl!("Save AI provider"), true)).inner.clicked() {
+                action = Some(LocalChatGptCommand::SaveModel(state.local_chatgpt_model_draft.clone()));
+            }
+        } else {
+            if let Some(profile) = &state.local_chatgpt_profile {
+                ui.label(&profile.account);
+            }
+            if crate::widgets::pill_button(ui, tl!("Continue with ChatGPT"), true).clicked() {
+                action = Some(LocalChatGptCommand::SignIn);
+            }
+            if state.local_chatgpt_profile.is_some() && crate::widgets::pill_button(ui, tl!("Connect another ChatGPT account"), false).clicked() {
+                action = Some(LocalChatGptCommand::SignInNew);
+            }
+            ui.label(tl!("Browser opens. Login. Allow access. Return here."));
+        }
+    });
+    if state.busy {
+        ui.spinner();
+    }
+    action.map(Command::LocalChatGpt)
 }
 
 fn finish(ui: &mut egui::Ui) -> bool {
@@ -1488,6 +1639,10 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
         PreferencesTab::Ai => {
             let snapshot = app.connected.snapshot.clone();
             let shared = snapshot.as_ref().and_then(|value| value.shared_ai.clone());
+            let web_chatgpt_available = snapshot.as_ref().is_some_and(|value| value.web_chatgpt_available);
+            if !app.connected.local_chatgpt_available && !web_chatgpt_available {
+                ui.label(tl!("ChatGPT OAuth for the web is in development. Other AI providers are available."));
+            }
             ui.label(tl!("AI configuration to use"));
             if shared.is_some() {
                 let previous_source = app.connected.ai_source.clone();
@@ -1507,6 +1662,9 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                         app.connected.ai_model = settings.model.clone();
                         app.connected.ai_secret.clear();
                         app.connected.ai_models.clear();
+                    }
+                    if app.connected.local_chatgpt_active() {
+                        app.connected.select_local_chatgpt();
                     }
                     action = Some(Command::SetAiSource { source: app.connected.ai_source.clone() });
                 }
@@ -1534,13 +1692,21 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
             } else {
                 section(ui, tl!("Personal AI"));
                 ui.label(tl!("AI provider"));
+                if app.connected.local_chatgpt_available && app.connected.ai_provider.is_empty() {
+                    app.connected.ai_provider = "openai".into();
+                    app.connected.ai_auth_mode = "api_key".into();
+                }
+                let providers =
+                    [("openai", "OpenAI / ChatGPT"), ("gemini", "Gemini"), ("openrouter", "OpenRouter"), ("compatible", "OpenAI-compatible")];
+                let provider_label = providers.iter().find(|(id, _)| *id == app.connected.ai_provider).map_or("", |(_, label)| *label);
+                let previous_local_choice = app.connected.local_chatgpt_requested();
                 let previous_provider = app.connected.ai_provider.clone();
-                craft_ui::ComboBox::from_id_salt("ai-provider").selected_text(&app.connected.ai_provider).show_ui(ui, |ui| {
-                    for (id, label) in
-                        [("openai", "OpenAI / ChatGPT"), ("gemini", "Gemini"), ("openrouter", "OpenRouter"), ("compatible", "OpenAI-compatible")]
-                    {
-                        ui.selectable_value(&mut app.connected.ai_provider, id.into(), label);
-                    }
+                ui.add_enabled_ui(!app.connected.busy, |ui| {
+                    craft_ui::ComboBox::from_id_salt("ai-provider").selected_text(provider_label).show_ui(ui, |ui| {
+                        for (id, label) in providers {
+                            ui.selectable_value(&mut app.connected.ai_provider, id.into(), label);
+                        }
+                    });
                 });
                 if app.connected.ai_provider != previous_provider {
                     app.connected.ai_models.clear();
@@ -1548,18 +1714,41 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                     app.connected.ai_secret.clear();
                 }
                 if app.connected.ai_provider == "openai" {
-                    craft_ui::ComboBox::from_id_salt("ai-auth").selected_text(&app.connected.ai_auth_mode).show_ui(ui, |ui| {
-                        ui.selectable_value(&mut app.connected.ai_auth_mode, "api_key".into(), tl!("API key"));
-                        ui.selectable_value(&mut app.connected.ai_auth_mode, "chatgpt_oauth".into(), "ChatGPT OAuth");
+                    let auth_label = if app.connected.ai_auth_mode == "chatgpt_oauth" { "ChatGPT OAuth" } else { tl!("API key") };
+                    ui.add_enabled_ui(!app.connected.busy, |ui| {
+                        craft_ui::ComboBox::from_id_salt("ai-auth").selected_text(auth_label).show_ui(ui, |ui| {
+                            ui.selectable_value(&mut app.connected.ai_auth_mode, "api_key".into(), tl!("API key"));
+                            ui.add_enabled_ui(app.connected.local_chatgpt_available || web_chatgpt_available, |ui| {
+                                ui.selectable_value(&mut app.connected.ai_auth_mode, "chatgpt_oauth".into(), "ChatGPT OAuth");
+                            });
+                        });
                     });
                 } else {
                     app.connected.ai_auth_mode = "api_key".into();
                 }
-                if app.connected.ai_auth_mode == "chatgpt_oauth" {
-                    if crate::widgets::pill_button(ui, tl!("Continue with ChatGPT"), true).clicked() {
-                        action = Some(Command::StartChatGptAuth);
+                let local_choice = app.connected.local_chatgpt_requested();
+                if local_choice != previous_local_choice
+                    && app.connected.local_chatgpt_profile.as_ref().is_some_and(|profile| profile.active != local_choice)
+                {
+                    app.connected_send(Command::LocalChatGpt(LocalChatGptCommand::SetActive(local_choice)));
+                }
+                if local_choice {
+                    if let Some(command) = local_chatgpt_panel(ui, &mut app.connected).or(action) {
+                        app.connected_send(command);
                     }
-                    ui.label(egui::RichText::new(tl!("Browser opens. Login. Allow access. Return here.")).small().color(t.text_muted));
+                    return finish(ui);
+                }
+                if app.connected.ai_auth_mode == "chatgpt_oauth" {
+                    if web_chatgpt_available {
+                        if ui
+                            .add_enabled_ui(!app.connected.busy, |ui| crate::widgets::pill_button(ui, tl!("Continue with ChatGPT"), true))
+                            .inner
+                            .clicked()
+                        {
+                            action = Some(Command::StartChatGptAuth);
+                        }
+                        ui.label(egui::RichText::new(tl!("Browser opens. Login. Allow access. Return here.")).small().color(t.text_muted));
+                    }
                 } else {
                     crate::widgets::password_line(
                         ui,
@@ -1579,7 +1768,7 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                 });
                 let can_load_models = !app.connected.busy
                     && if app.connected.ai_auth_mode == "chatgpt_oauth" {
-                        saved_credential
+                        web_chatgpt_available && saved_credential
                     } else {
                         !app.connected.ai_secret.is_empty() || saved_credential || app.connected.ai_provider == "compatible"
                     };
@@ -1621,7 +1810,12 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                         }
                     }
                 }
-                if crate::widgets::pill_button(ui, tl!("Save AI provider"), true).clicked() {
+                let can_save = app.connected.ai_auth_mode != "chatgpt_oauth" || (web_chatgpt_available && saved_credential);
+                if ui
+                    .add_enabled_ui(can_save && !app.connected.busy, |ui| crate::widgets::pill_button(ui, tl!("Save AI provider"), true))
+                    .inner
+                    .clicked()
+                {
                     action = Some(Command::SaveAi {
                         provider: app.connected.ai_provider.clone(),
                         auth_mode: app.connected.ai_auth_mode.clone(),
@@ -1633,16 +1827,21 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut EasyPdfApp, t: &crat
                 }
             }
             let help = match app.connected.ai_provider.as_str() {
-                "gemini" => tl!("Google AI Studio. Create key. Paste key. Load models. Choose model."),
-                "openrouter" => tl!("OpenRouter. Create key. Paste key. Load models. Choose model."),
-                "compatible" => tl!("Enter /v1 URL. Paste key if required. Load models. Choose model."),
-                _ if app.connected.ai_auth_mode == "chatgpt_oauth" => tl!("Press Continue. Login to ChatGPT. Allow access. Done."),
-                _ => tl!("OpenAI Platform. Create API key. Paste key. Load models. Choose model."),
+                "gemini" => Some(tl!("Google AI Studio. Create key. Paste key. Load models. Choose model.")),
+                "openrouter" => Some(tl!("OpenRouter. Create key. Paste key. Load models. Choose model.")),
+                "compatible" => Some(tl!("Enter /v1 URL. Paste key if required. Load models. Choose model.")),
+                _ if app.connected.ai_auth_mode == "chatgpt_oauth" && web_chatgpt_available => {
+                    Some(tl!("Press Continue. Login to ChatGPT. Allow access. Done."))
+                }
+                _ if app.connected.ai_auth_mode == "chatgpt_oauth" => None,
+                _ => Some(tl!("OpenAI Platform. Create API key. Paste key. Load models. Choose model.")),
             };
-            ui.horizontal_wrapped(|ui| {
-                ui.add(crate::icons::image("info", 16.0, t.accent));
-                ui.label(egui::RichText::new(help).small().color(t.text_muted));
-            });
+            if let Some(help) = help {
+                ui.horizontal_wrapped(|ui| {
+                    ui.add(crate::icons::image("info", 16.0, t.accent));
+                    ui.label(egui::RichText::new(help).small().color(t.text_muted));
+                });
+            }
         }
     }
     if let Some(modal_action) = management_modals(ui.ctx(), app, t) {

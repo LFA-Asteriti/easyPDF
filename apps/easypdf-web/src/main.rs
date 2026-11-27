@@ -409,6 +409,7 @@ async fn send_connected_command(command: easypdf_ui_egui::connected::Command, cs
             ("ai-models", serde_json::json!({"source": source, "provider": provider, "auth_mode": auth_mode, "base_url": base_url, "secret": secret}))
         }
         Command::StartChatGptAuth => ("chatgpt-auth-start", serde_json::json!({})),
+        Command::LocalChatGpt(_) => return Err("Local ChatGPT is available in the desktop app.".into()),
         Command::RunAi { task: ai_task, text, question, language } => {
             ("ai-run", serde_json::json!({"task": task(ai_task), "text": text, "question": question, "language": language}))
         }

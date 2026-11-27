@@ -15,6 +15,12 @@ easypdf-ui-egui = { workspace = true }
 ureq = { version = "3.4", default-features = false, features = ["rustls-no-provider", "_ring"] }
 rustls-native-certs = "0.8"
 base64 = "0.22"
+ring = "0.17"
+url = "2.5"
+webbrowser = "1"
+httparse = "1"
+uuid = "1"
+serde = { workspace = true }
 # The Web access token is persisted only in the operating-system credential store.
 keyring = { version = "3.6.3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 # `build_info`: the version and compile-time build label for `--version` and the log.

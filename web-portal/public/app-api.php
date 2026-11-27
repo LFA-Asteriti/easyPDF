@@ -243,6 +243,7 @@ function api_snapshot(array $user): array
         'notifications' => document_notifications($user),
         'shared_documents' => received_shared_documents($user),
         'csrf' => api_bearer() === null ? csrf_token() : null,
+        'web_chatgpt_available' => api_web_chatgpt_available(),
     ];
 }
 
@@ -353,6 +354,19 @@ function api_http_json(string $method, string $url, array $headers = [], ?array 
     return $decoded;
 }
 
+function api_web_chatgpt_available(): bool
+{
+    return trim((string) env_value('OPENAI_CLIENT_ID', '')) !== ''
+        && env_value('OPENAI_CHATGPT_PLAN_ENABLED', '0') === '1';
+}
+
+function api_require_web_chatgpt(): void
+{
+    if (!api_web_chatgpt_available()) {
+        throw new RuntimeException('ChatGPT OAuth per il Web è in lavorazione. Gli altri provider AI sono disponibili.', 503);
+    }
+}
+
 function api_refresh_chatgpt_token(int $userId, array $bundle): array
 {
     $refreshToken = $bundle['refresh_token'] ?? null;
@@ -421,6 +435,7 @@ function api_ai_config(array $user, ?string $requestedSource = null): array
     if (!$config) throw new RuntimeException('Configura prima un provider AI.');
     $secret = api_decrypt(is_string($config['secret_cipher']) ? $config['secret_cipher'] : null);
     if ($config['provider'] === 'openai' && $config['auth_mode'] === 'chatgpt_oauth') {
+        api_require_web_chatgpt();
         $bundle = json_decode($secret, true);
         if (is_array($bundle) && is_string($bundle['access_token'] ?? null)) {
             if ((int) ($bundle['expires_at'] ?? 0) <= time() + 60) $bundle = api_refresh_chatgpt_token($ownerUserId, $bundle);
@@ -499,6 +514,7 @@ function api_ai_run(array $config, array $body): string
 try {
     $action = (string) ($_GET['action'] ?? 'snapshot');
     if ($action === 'chatgpt-callback') {
+        api_require_web_chatgpt();
         $state = (string) ($_GET['state'] ?? '');
         $code = (string) ($_GET['code'] ?? '');
         $stmt = db()->prepare('SELECT user_id, verifier_cipher FROM oauth_transactions WHERE state_hash = ? AND expires_at > CURRENT_TIMESTAMP');
@@ -843,6 +859,10 @@ try {
         if (!in_array($provider, ['openai', 'gemini', 'openrouter', 'compatible'], true) || !in_array($authMode, ['api_key', 'chatgpt_oauth'], true)) throw new RuntimeException('Provider AI non valido.');
         if ($provider !== 'openai') $authMode = 'api_key';
         $base = trim((string) ($body['base_url'] ?? '')); $model = trim((string) ($body['model'] ?? '')); $secret = (string) ($body['secret'] ?? '');
+        if ($authMode === 'chatgpt_oauth') {
+            api_require_web_chatgpt();
+            if ($secret !== '') throw new RuntimeException('Collega il tuo account ChatGPT dal browser.');
+        }
         if (strlen($base) > 512 || strlen($model) > 160) throw new RuntimeException('Configurazione AI troppo lunga.');
         $cipher = $secret === '' ? null : api_encrypt($secret);
         $sharedIds = array_values(array_unique(array_map('intval', is_array($body['shared_user_ids'] ?? null) ? $body['shared_user_ids'] : [])));
@@ -853,7 +873,7 @@ try {
         $pdo = db();
         $pdo->beginTransaction();
         try {
-            $pdo->prepare('INSERT INTO ai_provider_settings (user_id, provider, auth_mode, base_url, model, secret_cipher) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE provider=VALUES(provider), auth_mode=VALUES(auth_mode), base_url=VALUES(base_url), model=VALUES(model), secret_cipher=COALESCE(VALUES(secret_cipher), secret_cipher)')
+            $pdo->prepare("INSERT INTO ai_provider_settings (user_id, provider, auth_mode, base_url, model, secret_cipher) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE secret_cipher=COALESCE(VALUES(secret_cipher), IF(provider = VALUES(provider) AND auth_mode = VALUES(auth_mode) AND (provider <> 'compatible' OR CAST(base_url AS BINARY) <=> CAST(VALUES(base_url) AS BINARY)), secret_cipher, NULL)), provider=VALUES(provider), auth_mode=VALUES(auth_mode), base_url=VALUES(base_url), model=VALUES(model)")
                 ->execute([(int) $user['id'], $provider, $authMode, $base, $model, $cipher]);
             if ($user['role'] === 'admin' && $user['organization_id'] !== null) {
                 if ($sharedIds !== []) {
@@ -892,25 +912,34 @@ try {
         $draftAuth = (string) ($body['auth_mode'] ?? '');
         $draftBase = trim((string) ($body['base_url'] ?? ''));
         $draftSecret = (string) ($body['secret'] ?? '');
+        if ($source !== 'organization' && $draftAuth === 'chatgpt_oauth') {
+            api_require_web_chatgpt();
+            if ($draftSecret !== '') throw new RuntimeException('Collega il tuo account ChatGPT dal browser.');
+        }
         try {
             $config = api_ai_config($user, $source);
         } catch (RuntimeException $error) {
             if ($source === 'organization') throw $error;
             if ($draftSecret === '' && !($draftProvider === 'compatible' && $draftBase !== '')) throw $error;
-            $config = ['provider' => 'openai', 'auth_mode' => 'api_key', 'base_url' => '', 'model' => '', 'secret' => $draftSecret];
+            $config = ['provider' => 'openai', 'auth_mode' => 'api_key', 'base_url' => '', 'model' => '', 'secret' => ''];
         }
         if ($source !== 'organization') {
-            if (in_array($draftProvider, ['openai', 'gemini', 'openrouter', 'compatible'], true)) $config['provider'] = $draftProvider;
-            if (in_array($draftAuth, ['api_key', 'chatgpt_oauth'], true)) $config['auth_mode'] = $draftAuth;
-            if ($draftBase !== '') $config['base_url'] = $draftBase;
-            if ($draftSecret !== '') $config['secret'] = $draftSecret;
+            $provider = in_array($draftProvider, ['openai', 'gemini', 'openrouter', 'compatible'], true) ? $draftProvider : $config['provider'];
+            $auth = $provider === 'openai' && in_array($draftAuth, ['api_key', 'chatgpt_oauth'], true) ? $draftAuth : ($provider === 'openai' ? $config['auth_mode'] : 'api_key');
+            $base = $draftBase !== '' ? $draftBase : $config['base_url'];
+            $sameCredential = $provider === $config['provider'] && $auth === $config['auth_mode'] && ($provider !== 'compatible' || $base === $config['base_url']);
+            $config['provider'] = $provider;
+            $config['auth_mode'] = $auth;
+            $config['base_url'] = $base;
+            $config['secret'] = $draftSecret !== '' ? $draftSecret : ($sameCredential ? $config['secret'] : '');
+            if ($provider !== 'compatible' && $config['secret'] === '') throw new RuntimeException('Credenziale del provider mancante.');
         }
         api_json(['models' => api_ai_models($config)]);
     }
     if ($action === 'ai-run') api_json(['result' => api_ai_run(api_ai_config($user), $body)]);
     if ($action === 'chatgpt-auth-start') {
+        api_require_web_chatgpt();
         $clientId = (string) env_value('OPENAI_CLIENT_ID', '');
-        if ($clientId === '') throw new RuntimeException('OPENAI_CLIENT_ID non configurato sul server.');
         $state = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
         $verifier = rtrim(strtr(base64_encode(random_bytes(64)), '+/', '-_'), '=');
         $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');

@@ -4,12 +4,12 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use base64::Engine as _;
-use easypdf_ui_egui::connected::{AiTask, Command, CommandFn, Event, EventQueue, Snapshot};
+use easypdf_ui_egui::connected::{AiTask, Command, CommandFn, Event, EventQueue, LocalChatGptProfile, Snapshot};
 
 const CREDENTIAL_SERVICE: &str = "it.twinba.easypdf";
 const CREDENTIAL_ACCOUNT: &str = "web-session";
 
-fn credential_for(account: &str) -> Result<keyring::Entry, String> {
+pub(crate) fn credential_for(account: &str) -> Result<keyring::Entry, String> {
     keyring::Entry::new(CREDENTIAL_SERVICE, account).map_err(|error| format!("Operating-system credential store is unavailable: {error}"))
 }
 
@@ -45,19 +45,28 @@ fn delete_session() -> Result<(), String> {
     }
 }
 
-pub(crate) fn command_fn(events: EventQueue, ctx: egui::Context) -> (CommandFn, Option<String>) {
+pub(crate) fn command_fn(events: EventQueue, ctx: egui::Context) -> (CommandFn, Option<String>, Option<LocalChatGptProfile>) {
     let restored = load_session();
     let restored_url = restored.as_ref().map(|(url, _)| url.clone());
     let (restored_base, restored_token) = restored.unwrap_or_default();
     let base = Arc::new(Mutex::new(restored_base));
     let token = Arc::new(Mutex::new(restored_token));
+    let mut session = crate::chatgpt::Session::default();
+    let local_profile = session.restore().ok().flatten();
+    let chatgpt = Arc::new(Mutex::new(session));
     let command = Box::new(move |command| {
         let events = events.clone();
         let ctx = ctx.clone();
         let base = base.clone();
         let token = token.clone();
+        let chatgpt = chatgpt.clone();
         std::thread::spawn(move || {
-            let event = execute(command, &base, &token).unwrap_or_else(Event::Error);
+            let event = if crate::chatgpt::is_local(&command) {
+                chatgpt.lock().map_err(|_| "ChatGPT session unavailable".to_string()).and_then(|mut session| session.execute(command))
+            } else {
+                execute(command, &base, &token)
+            }
+            .unwrap_or_else(Event::Error);
             match events.lock() {
                 Ok(mut queue) => queue.push(event),
                 Err(poisoned) => poisoned.into_inner().push(event),
@@ -65,12 +74,18 @@ pub(crate) fn command_fn(events: EventQueue, ctx: egui::Context) -> (CommandFn, 
             ctx.request_repaint();
         });
     });
-    (command, restored_url)
+    (command, restored_url, local_profile)
 }
 
 fn agent() -> Result<ureq::Agent, String> {
+    let defaults = ureq::Agent::config_builder().build();
+    configured_agent(defaults.max_redirects())
+}
+
+pub(crate) fn configured_agent(max_redirects: u32) -> Result<ureq::Agent, String> {
     Ok(ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(120)))
+        .max_redirects(max_redirects)
         .tls_config(ureq::tls::TlsConfig::builder().root_certs(os_roots()?).build())
         .build()
         .new_agent())
@@ -253,6 +268,7 @@ fn execute(command: Command, base_store: &Mutex<String>, token_store: &Mutex<Str
             ("ai-models", serde_json::json!({"source": source, "provider": provider, "auth_mode": auth_mode, "base_url": base_url, "secret": secret}))
         }
         Command::StartChatGptAuth => ("chatgpt-auth-start", serde_json::json!({})),
+        Command::LocalChatGpt(_) => return Err("Invalid portal command.".into()),
         Command::RunAi { task: ai_task, text, question, language } => {
             ("ai-run", serde_json::json!({"task": task(ai_task), "text": text, "question": question, "language": language}))
         }

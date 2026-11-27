@@ -261,6 +261,8 @@ total matches the parity estimate.
 
 ## Upcoming milestones, ranked
 
+M13 easyPDF candidate (2026-11-26): native ChatGPT OAuth now has its own local sign-in and credential lifecycle. Hosted plan usage awaits provider approval and an end-to-end web integration. Desktop live-account tests are pending.
+
 | Rank | Next milestone | Closes | Estimate (h) |
 |---|---|---|---|
 | 0 | Convert and share: Create PDF from Office, Word export keeps layout | part of gap 8 | 32–55 |
