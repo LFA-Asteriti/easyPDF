@@ -70,7 +70,7 @@ jobs:
   gate:
     if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     # Reviewed shared gate pinned for this easyPDF release.
-    uses: storytold/craft-common-actions/.github/workflows/gate.yml@91e2c7617393ce0dfbe67ef5daf7254ade368203
+    uses: storytold/craft-common-actions/.github/workflows/gate.yml@f94a43818dabb2e85f2f4d5cd768bb8e5662600a
     with:
       # easyPDF carries its audited multilingual fonts internally. Empty explicitly disables the
       # shared workflow's legacy default checkout.
