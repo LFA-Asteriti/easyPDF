@@ -39,7 +39,7 @@ jobs:
       - name: Package Windows x64
         shell: pwsh
         run: ./packaging/windows/package.ps1 -Arch x64
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: easypdf-windows
           path: dist/release/*windows-x64*
@@ -70,7 +70,7 @@ jobs:
           rustup default stable
       - name: Package Linux x64
         run: bash packaging/linux/package.sh --formats 'tar cli'
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: easypdf-linux
           path: dist/release/*linux-x86_64.tar.gz
@@ -100,7 +100,7 @@ jobs:
           rustup target add aarch64-apple-darwin x86_64-apple-darwin
       - name: Package universal macOS DMG
         run: bash packaging/macos/package.sh --arch universal
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: easypdf-macos
           path: |
@@ -160,7 +160,7 @@ jobs:
             cp "$ofl" "dist/web-host/font-licences/OFL-$family.txt"
           done
           (cd dist && zip -qr "release/easypdf-web-host-$version.zip" web-host)
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: easypdf-web-host
           path: dist/release/*web-host*.zip
@@ -176,7 +176,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: easypdf-*
           path: dist/release

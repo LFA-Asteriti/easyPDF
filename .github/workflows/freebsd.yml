@@ -24,7 +24,7 @@ permissions:
 jobs:
   freebsd:
     # Reviewed shared workflow pinned for this easyPDF release.
-    uses: storytold/craft-common-actions/.github/workflows/freebsd.yml@91e2c7617393ce0dfbe67ef5daf7254ade368203
+    uses: storytold/craft-common-actions/.github/workflows/freebsd.yml@f94a43818dabb2e85f2f4d5cd768bb8e5662600a
     with:
       # Empty explicitly disables the shared workflow's legacy font-repository checkout.
       craft-fonts-ref: ''
