@@ -448,3 +448,5 @@ Estimates unchanged.
 ## Pages sidebar keyboard refresh (2026-10-30)
 
 PR #2133 retains document-local Pages sidebar focus for Ctrl/Cmd+A and Escape after the UI module split. The selection does not navigate. The focused regression is in `crates/ui-egui/tests/it/view.rs`; current-head hosted validation is pending. Feature counts and estimates are unchanged.
+
+M13 easyPDF follow-up (2026-11-27): desktop ChatGPT OAuth uses its local profile even when the connected portal still has a hosted OAuth configuration. The availability notice belongs to the web editor. The AI question field fills the dialog content width on desktop and web.
